@@ -1,0 +1,5 @@
+asset_class,H_hat_IV,beta,R_psi_sq,identified,n_obs,n_dates,H_realized_target,H_implied_target
+equity_index,0.248966,-0.251034,0.859720,True,4500,500,0.120000,0.250000
+rates,0.241811,-0.258189,0.054957,False,4500,500,0.200000,
+fx,0.139583,-0.360417,0.111752,False,4500,500,0.160000,
+energy,0.150654,-0.349346,0.840568,True,4500,500,0.110000,0.150000
