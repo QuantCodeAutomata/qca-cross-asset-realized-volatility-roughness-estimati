@@ -1,67 +1,63 @@
-"""
-Seven realized-variance estimators for high-frequency intraday return data.
+"""Realised-variance estimators used by the replication.
 
-All functions accept a 1-D numpy array of *within-session* log returns and
-return a non-negative float64 scalar (the daily realized variance estimate).
+All public functions accept a one-dimensional array of within-session *log
+returns*.  The implementations follow the definitions cited by the paper while
+keeping finite-sample choices explicit.
 
-Estimators
-----------
-1. RV5m   - 5-minute subsampled realized variance
-2. RK     - Realized Kernel with Parzen weights (Barndorff-Nielsen et al. 2008)
-3. TSRV   - Two-Scale Realized Variance (Zhang et al. 2005)
-4. BPV    - Bipower Variation (Barndorff-Nielsen & Shephard 2004)
-5. PAV    - Pre-Averaged Variance (Jacod et al. 2009)
-6. PABPV  - Pre-Averaged Bipower Variation (Jacod et al. 2009)
-7. C-TRV  - Corrected Threshold Realized Variance (Corsi et al. 2010)
+Two corrections relative to the submitted repository are important:
+
+* TSRV slow-grid returns must be K-step *price differences*, not every K-th
+  one-minute return.
+* For ``g(x)=min(x, 1-x)``, Jacod et al.'s notation is
+  ``psi_1 = ∫(g')² = 1`` and ``psi_2 = ∫g² = 1/12``.  The submitted code had
+  the constants and the PAV normalisation reversed, which drove PAV to zero.
 """
+
+from __future__ import annotations
+
+from typing import Optional, Tuple
 
 import numpy as np
 from scipy.stats import norm
-from typing import Optional, Tuple
+
+
+def _clean_returns(returns: np.ndarray) -> np.ndarray:
+    r = np.asarray(returns, dtype=np.float64)
+    if r.ndim != 1:
+        raise ValueError("returns must be one-dimensional")
+    return r[np.isfinite(r)]
 
 
 # ---------------------------------------------------------------------------
-# Pre-averaging weight constants
+# Pre-averaging constants and helper
 # ---------------------------------------------------------------------------
 
 def compute_psi_constants() -> Tuple[float, float]:
-    """Compute the pre-averaging weight constants for g(x) = min(x, 1-x).
+    """Return ``(psi_1, psi_2)`` for ``g(x)=min(x,1-x)``.
 
-    psi_1 = integral_0^1 g(x)^2 dx
-      Analytic: two equal integrals over [0,1/2] and [1/2,1], each = 1/24,
-      giving psi_1 = 1/12.
-    psi_2 = integral_0^1 (g\'(x))^2 dx
-      g\'(x) = +1 on [0,1/2) and -1 on (1/2,1], so (g\')**2 = 1 everywhere
-      and psi_2 = 1.
-
-    Returns
-    -------
-    psi_1 : float  (= 1/12)
-    psi_2 : float  (= 1.0)
+    In Jacod et al. (2009), ``psi_1 = ∫_0^1 (g'(x))² dx = 1`` and
+    ``psi_2 = ∫_0^1 g(x)² dx = 1/12``.
     """
-    return 1.0 / 12.0, 1.0
+    return 1.0, 1.0 / 12.0
 
 
 def _preaveraged_returns(returns: np.ndarray, k_n: int) -> np.ndarray:
-    """Pre-averaged returns Ybar_i = sum_{j=0}^{k_n-1} g(j/k_n) * r_{i+j}.
+    """Compute moving pre-averaged returns.
 
-    g(x) = min(x, 1-x) per Jacod et al. (2009).
-
-    Parameters
-    ----------
-    returns : np.ndarray   length n
-    k_n     : int          pre-averaging window
-
-    Returns
-    -------
-    np.ndarray  shape (n - k_n + 1,)
+    ``Ybar_i = Σ_{j=1}^{k_n-1} g(j/k_n) r_{i+j}`` in the usual observation
+    indexing.  In zero-based NumPy indexing this is a convolution with the
+    ``k_n-1`` interior weights.  There is deliberately no extra ``1/k_n``:
+    the normalisation is supplied by the estimator itself.
     """
-    j = np.arange(k_n, dtype=np.float64)
+    r = _clean_returns(returns)
+    if k_n < 2:
+        raise ValueError("k_n must be at least two")
+    if r.size < k_n - 1:
+        return np.empty(0, dtype=np.float64)
+
+    j = np.arange(1, k_n, dtype=np.float64)
     g = np.minimum(j / k_n, 1.0 - j / k_n)
-    # Equivalent to: Ybar[i] = dot(g, returns[i:i+k_n])
-    # Vectorised via convolution: convolve(returns, g[::-1], mode=valid)
-    Ybar = np.convolve(returns, g[::-1], mode="valid")
-    return Ybar
+    return np.convolve(r, g[::-1], mode="valid")
 
 
 # ---------------------------------------------------------------------------
@@ -73,238 +69,236 @@ def compute_rv5m(
     freq_minutes: int = 1,
     target_minutes: int = 5,
 ) -> float:
-    """RV5m: realized variance at 5-minute sampling frequency.
+    """Realised variance from non-overlapping five-minute returns."""
+    r = _clean_returns(returns)
+    if freq_minutes <= 0 or target_minutes <= 0:
+        raise ValueError("sampling frequencies must be positive")
+    if target_minutes % freq_minutes != 0:
+        raise ValueError("target_minutes must be a multiple of freq_minutes")
 
-    Aggregates consecutive 1-minute returns into non-overlapping
-    target_minutes-minute returns by summing blocks of `step` elements,
-    then sums the squared coarse returns.
-
-    Parameters
-    ----------
-    returns       : 1-minute within-session log returns (~390 values). NaN dropped.
-    freq_minutes  : input frequency in minutes (default 1).
-    target_minutes: target sampling interval in minutes (default 5).
-
-    Returns
-    -------
-    float  (>= 0)
-    """
-    r = np.asarray(returns, dtype=np.float64)
-    r = r[~np.isnan(r)]
     step = target_minutes // freq_minutes
-    n_blocks = len(r) // step
+    n_blocks = r.size // step
     if n_blocks == 0:
         return 0.0
-    r_coarse = r[: n_blocks * step].reshape(n_blocks, step).sum(axis=1)
-    return float(np.sum(r_coarse ** 2))
+    coarse = r[: n_blocks * step].reshape(n_blocks, step).sum(axis=1)
+    return float(np.dot(coarse, coarse))
 
 
 # ---------------------------------------------------------------------------
-# 2. Realized Kernel (Parzen, BN et al. 2008)
+# 2. Realised Kernel (Parzen)
 # ---------------------------------------------------------------------------
 
 def _parzen_kernel(x: np.ndarray) -> np.ndarray:
-    """Parzen kernel: piecewise cubic with compact support on [-1, 1]."""
-    ax = np.abs(x)
+    """Parzen kernel with support on ``[-1, 1]``."""
+    ax = np.abs(np.asarray(x, dtype=np.float64))
     return np.where(
         ax <= 0.5,
         1.0 - 6.0 * ax**2 + 6.0 * ax**3,
-        np.where(ax <= 1.0, 2.0 * (1.0 - ax)**3, 0.0),
+        np.where(ax <= 1.0, 2.0 * (1.0 - ax) ** 3, 0.0),
     )
+
+
+def _parzen_bandwidth(returns: np.ndarray) -> int:
+    """BNHLS data-driven Parzen bandwidth, in return lags.
+
+    The practical rule is ``H = 3.5134 * xi^(4/5) * n^(3/5)``.  With
+    ``xi2 = omega² / sqrt(IQ) = xi²``, this is
+    ``3.5134 * xi2^(2/5) * n^(3/5)``.
+    """
+    r = _clean_returns(returns)
+    n = r.size
+    if n < 4:
+        return max(n - 1, 0)
+
+    gamma1_sum = float(np.dot(r[1:], r[:-1]))
+    # Under additive price noise, E[r_t r_{t-1}] = -omega².  The dot product
+    # is a sum, hence divide by the number of pairs.
+    omega2 = max(-gamma1_sum / (n - 1), 0.0)
+    iq = max((n / 3.0) * float(np.sum(r**4)), np.finfo(float).tiny)
+    xi2 = omega2 / np.sqrt(iq)
+
+    if xi2 <= 0.0:
+        return 1
+    bandwidth = int(np.ceil(3.5134 * xi2 ** (2.0 / 5.0) * n ** (3.0 / 5.0)))
+    return int(np.clip(bandwidth, 1, n - 1))
 
 
 def compute_realized_kernel(
     returns: np.ndarray,
     max_lag: Optional[int] = None,
+    *,
+    clip: bool = True,
 ) -> float:
-    """Realized Kernel with Parzen weights (Barndorff-Nielsen et al. 2008).
+    """Parzen realised kernel.
 
-    RK = gamma_0 + 2 * sum_{l=1}^L k(l/(L+1)) * gamma_l
-    gamma_l = sum_{t=l}^{n-1} r[t] * r[t-l]
-
-    Bandwidth L uses the data-driven rule of Barndorff-Nielsen et al. (2009):
-      omega2 = max(-gamma_1, 0)     (negated first-lag autocovariance)
-      IQ     = (n/3) * sum(r**4)   (realized quarticity)
-      xi2    = omega2 / IQ**0.5
-      L      = c* * (xi2 * n)**(2/5), c* = 3.5134
-
-    Parameters
-    ----------
-    returns : np.ndarray   within-session log returns
-    max_lag : int, optional  overrides data-driven bandwidth
-
-    Returns
-    -------
-    float  (>= 0)
+    This is the non-flat-top kernel sum used by the paper's simplified
+    one-minute pipeline.  The full BNHLS empirical procedure also discusses
+    end effects and timestamp regularisation; those require raw quote/trade
+    data and are outside this synthetic harness.
     """
-    r = np.asarray(returns, dtype=np.float64)
-    r = r[~np.isnan(r)]
-    n = len(r)
-    if n < 4:
-        return float(np.sum(r**2))
-
-    gamma_0 = float(np.dot(r, r))
-
-    if max_lag is not None:
-        L = max(1, int(max_lag))
-    else:
-        gamma_1 = float(np.dot(r[1:], r[:-1]))
-        omega2 = max(-gamma_1, 1e-20)
-        IQ = max(float(np.sum(r**4)) * n / 3.0, 1e-40)
-        xi2 = omega2 / (IQ**0.5)
-        L = max(1, int(np.ceil(3.5134 * (xi2 * n)**0.4)))
-        L = min(L, n - 1)
-
-    lags = np.arange(1, L + 1, dtype=np.float64)
-    weights = _parzen_kernel(lags / (L + 1))
-    rk = gamma_0
-    for li, w in zip(range(1, L + 1), weights):
-        if w == 0.0:
-            continue
-        rk += 2.0 * w * float(np.dot(r[li:], r[: n - li]))
-    return max(float(rk), 0.0)
-
-
-# ---------------------------------------------------------------------------
-# 3. TSRV (Zhang et al. 2005)
-# ---------------------------------------------------------------------------
-
-def compute_tsrv(returns: np.ndarray, K: int = 5) -> float:
-    """Two-Scale Realized Variance.
-
-    TSRV = (1/K) sum_{k=0}^{K-1} RV_k  -  (bar_n / n) * RV_full
-    bar_n = (n - K + 1) / K
-
-    Parameters
-    ----------
-    returns : np.ndarray  within-session 1-minute log returns
-    K       : int         slow-scale window in minutes (default 5)
-
-    Returns
-    -------
-    float  (clipped to 0 from below)
-    """
-    r = np.asarray(returns, dtype=np.float64)
-    r = r[~np.isnan(r)]
-    n = len(r)
+    r = _clean_returns(returns)
+    n = r.size
     if n == 0:
         return 0.0
-    rv_slow = sum(float(np.sum(r[k::K]**2)) for k in range(K)) / K
-    rv_fast = float(np.sum(r**2))
-    bar_n = (n - K + 1) / K
-    return max(float(rv_slow - (bar_n / n) * rv_fast), 0.0)
+    if n < 4:
+        value = float(np.dot(r, r))
+        return max(value, 0.0) if clip else value
+
+    if max_lag is None:
+        bandwidth = _parzen_bandwidth(r)
+    else:
+        bandwidth = int(np.clip(int(max_lag), 1, n - 1))
+
+    value = float(np.dot(r, r))
+    lags = np.arange(1, bandwidth + 1, dtype=np.float64)
+    weights = _parzen_kernel(lags / (bandwidth + 1.0))
+    for lag, weight in zip(range(1, bandwidth + 1), weights):
+        value += 2.0 * float(weight) * float(np.dot(r[lag:], r[:-lag]))
+
+    return max(value, 0.0) if clip else value
 
 
 # ---------------------------------------------------------------------------
-# 4. BPV (Barndorff-Nielsen & Shephard 2004)
+# 3. TSRV
+# ---------------------------------------------------------------------------
+
+def compute_tsrv(
+    returns: np.ndarray,
+    K: int = 5,
+    *,
+    finite_sample_rescale: bool = False,
+    clip: bool = True,
+) -> float:
+    """Two-scale realised variance.
+
+    The slow component averages realised variances over all ``K`` staggered
+    price subgrids.  A K-step subgrid return is a difference of observed
+    prices K minutes apart; selecting every K-th one-minute return, as the
+    submitted implementation did, is not equivalent.
+
+    The paper writes
+
+    ``TSRV = mean_k(RV_slow,k) - (bar_n/n) RV_fast``.
+
+    ``finite_sample_rescale=True`` applies the optional division by
+    ``1 - bar_n/n`` used in some implementations.  It is a constant daily
+    scale when ``n`` is fixed and therefore does not affect H directly.
+    """
+    r = _clean_returns(returns)
+    n = r.size
+    if n == 0:
+        return 0.0
+    if K < 2:
+        raise ValueError("K must be at least two")
+    K = min(int(K), n)
+
+    prices = np.concatenate(([0.0], np.cumsum(r)))
+    slow_rvs: list[float] = []
+    slow_counts: list[int] = []
+    for offset in range(K):
+        grid = prices[offset::K]
+        if grid.size < 2:
+            continue
+        grid_returns = np.diff(grid)
+        slow_rvs.append(float(np.dot(grid_returns, grid_returns)))
+        slow_counts.append(int(grid_returns.size))
+
+    if not slow_rvs:
+        return 0.0
+
+    rv_slow = float(np.mean(slow_rvs))
+    rv_fast = float(np.dot(r, r))
+    bar_n = float(np.mean(slow_counts))
+    ratio = bar_n / n
+    value = rv_slow - ratio * rv_fast
+    if finite_sample_rescale and ratio < 1.0:
+        value /= 1.0 - ratio
+
+    return max(value, 0.0) if clip else value
+
+
+# ---------------------------------------------------------------------------
+# 4. BPV
 # ---------------------------------------------------------------------------
 
 def compute_bpv(returns: np.ndarray) -> float:
-    """Bipower Variation.
-
-    BPV = (pi/2) * sum_{i=2}^n |r_i| * |r_{i-1}|
-
-    Jump-robust, not noise-robust.
-
-    Parameters
-    ----------
-    returns : np.ndarray  within-session log returns
-
-    Returns
-    -------
-    float  (>= 0)
-    """
-    r = np.asarray(returns, dtype=np.float64)
-    r = r[~np.isnan(r)]
-    if len(r) < 2:
+    """Bipower variation, robust to finite-activity price jumps."""
+    r = _clean_returns(returns)
+    if r.size < 2:
         return 0.0
-    return max(float((np.pi / 2.0) * np.sum(np.abs(r[1:]) * np.abs(r[:-1]))), 0.0)
+    return float((np.pi / 2.0) * np.sum(np.abs(r[1:]) * np.abs(r[:-1])))
 
 
 # ---------------------------------------------------------------------------
-# 5. PAV (Jacod et al. 2009)
+# 5. PAV
 # ---------------------------------------------------------------------------
 
-def compute_pav(returns: np.ndarray, theta: float = 1.0) -> float:
-    """Pre-Averaged Variance.
+def compute_pav(
+    returns: np.ndarray,
+    theta: float = 1.0,
+    *,
+    clip: bool = True,
+) -> float:
+    """Pre-averaged realised variance.
 
-    PAV = (1 / (n * k_n * psi_2)) * sum_i Ybar_i^2
-          - (psi_1 / (2 * psi_2 * k_n)) * RV_full
+    For ``k_n = ceil(theta*sqrt(n))`` and ``g(x)=min(x,1-x)``, a finite-sample
+    form of Jacod et al.'s estimator is
 
-    k_n = ceil(theta * sqrt(n)), psi_1 = 1/12, psi_2 = 1.
-
-    Simultaneously noise-robust and consistent for integrated variance.
-
-    Parameters
-    ----------
-    returns : np.ndarray  within-session log returns
-    theta   : float       window scaling constant (default 1)
-
-    Returns
-    -------
-    float  (>= 0)
+    ``sum(Ybar_i²)/(k_n*psi_2) - psi_1*RV/(2*k_n²*psi_2)``.
     """
-    r = np.asarray(returns, dtype=np.float64)
-    r = r[~np.isnan(r)]
-    n = len(r)
+    r = _clean_returns(returns)
+    n = r.size
+    if n == 0:
+        return 0.0
+    if theta <= 0.0:
+        raise ValueError("theta must be positive")
     if n < 4:
-        return float(np.sum(r**2))
+        return float(np.dot(r, r))
+
     psi_1, psi_2 = compute_psi_constants()
-    k_n = max(1, int(np.ceil(theta * np.sqrt(n))))
-    Ybar = _preaveraged_returns(r, k_n)
-    main = float(np.sum(Ybar**2)) / (n * k_n * psi_2)
-    bias = (psi_1 / (2.0 * psi_2 * k_n)) * float(np.sum(r**2))
-    return max(float(main - bias), 0.0)
+    k_n = int(np.clip(np.ceil(theta * np.sqrt(n)), 2, n))
+    ybar = _preaveraged_returns(r, k_n)
+    if ybar.size == 0:
+        return 0.0
+
+    main = float(np.dot(ybar, ybar)) / (k_n * psi_2)
+    bias = (psi_1 / (2.0 * k_n**2 * psi_2)) * float(np.dot(r, r))
+    value = main - bias
+    return max(value, 0.0) if clip else value
 
 
 # ---------------------------------------------------------------------------
-# 6. PABPV (Jacod et al. 2009)
+# 6. PABPV
 # ---------------------------------------------------------------------------
 
 def compute_pabpv(returns: np.ndarray, theta: float = 1.0) -> float:
-    """Pre-Averaged Bipower Variation.
-
-    PABPV = (pi / (2 * k_n * psi_2)) * sum_{i=0}^{n-2k_n} |Ybar_i| * |Ybar_{i+k_n}|
-
-    Both noise-robust and jump-robust.
-
-    Parameters
-    ----------
-    returns : np.ndarray  within-session log returns
-    theta   : float       window scaling constant (default 1)
-
-    Returns
-    -------
-    float  (>= 0)
-    """
-    r = np.asarray(returns, dtype=np.float64)
-    r = r[~np.isnan(r)]
-    n = len(r)
+    """Pre-averaged bipower variation using non-overlapping blocks."""
+    r = _clean_returns(returns)
+    n = r.size
+    if n == 0:
+        return 0.0
+    if theta <= 0.0:
+        raise ValueError("theta must be positive")
     if n < 4:
-        return max(float((np.pi / 2.0) * np.sum(np.abs(r[1:]) * np.abs(r[:-1]))), 0.0)
+        return compute_bpv(r)
+
     _, psi_2 = compute_psi_constants()
-    k_n = max(1, int(np.ceil(theta * np.sqrt(n))))
-    Ybar = _preaveraged_returns(r, k_n)
-    absY = np.abs(Ybar)
-    n_pairs = len(absY) - k_n
+    k_n = int(np.clip(np.ceil(theta * np.sqrt(n)), 2, n))
+    ybar = _preaveraged_returns(r, k_n)
+    n_pairs = ybar.size - k_n
     if n_pairs <= 0:
         return 0.0
-    products = absY[:n_pairs] * absY[k_n : k_n + n_pairs]
-    return max(float((np.pi / 2.0) / (k_n * psi_2) * np.sum(products)), 0.0)
+
+    products = np.abs(ybar[:n_pairs]) * np.abs(ybar[k_n : k_n + n_pairs])
+    return float((np.pi / (2.0 * k_n * psi_2)) * np.sum(products))
 
 
 # ---------------------------------------------------------------------------
-# 7. C-TRV (Corsi et al. 2010)
+# 7. C-TRV
 # ---------------------------------------------------------------------------
 
 def _ctrv_constant() -> float:
-    """Exceedance replacement constant c for C-TRV.
-
-    c = E[X^2 | |X| > 3] for X ~ N(0,1)
-      = (3*phi(3) + (1 - Phi(3))) / (1 - Phi(3))  ~= 10.849
-
-    Note: uses the PDF phi, not the CDF Phi, in the numerator.
-    """
+    """``E[Z² | |Z|>3]`` for ``Z~N(0,1)`` (approximately 10.849)."""
     phi3 = norm.pdf(3.0)
     tail = 1.0 - norm.cdf(3.0)
     return float((3.0 * phi3 + tail) / tail)
@@ -314,35 +308,19 @@ _C_TRV_C: float = _ctrv_constant()
 
 
 def compute_ctrv(returns: np.ndarray) -> float:
-    """Corrected Threshold Realized Variance (C-TRV).
-
-    vartheta2 = BPV / n
-    threshold = 9 * vartheta2
-
-    C-TRV = sum_{r^2 <= threshold} r^2  +  count_{r^2 > threshold} * c * vartheta2
-
-    Parameters
-    ----------
-    returns : np.ndarray  within-session log returns
-
-    Returns
-    -------
-    float  (>= 0)
-    """
-    r = np.asarray(returns, dtype=np.float64)
-    r = r[~np.isnan(r)]
-    n = len(r)
+    """Corrected threshold realised variance of Corsi et al. (2010)."""
+    r = _clean_returns(returns)
+    n = r.size
+    if n == 0:
+        return 0.0
     if n < 2:
-        return float(np.sum(r**2))
-    bpv = compute_bpv(r)
-    vartheta2 = bpv / n
+        return float(np.dot(r, r))
+
+    vartheta2 = compute_bpv(r) / n
     threshold = 9.0 * vartheta2
-    r2 = r**2
+    r2 = np.square(r)
     below = r2 <= threshold
-    return max(
-        float(np.sum(r2[below])) + float((~below).sum()) * _C_TRV_C * vartheta2,
-        0.0,
-    )
+    return float(np.sum(r2[below]) + np.count_nonzero(~below) * _C_TRV_C * vartheta2)
 
 
 # ---------------------------------------------------------------------------
@@ -350,23 +328,14 @@ def compute_ctrv(returns: np.ndarray) -> float:
 # ---------------------------------------------------------------------------
 
 def compute_all_estimators(returns: np.ndarray) -> dict:
-    """Compute all 7 RV estimators for one day's within-session return series.
-
-    Parameters
-    ----------
-    returns : np.ndarray  1-minute within-session log returns (~390 values)
-
-    Returns
-    -------
-    dict with keys: rv5m, rk, tsrv, bpv, pav, pabpv, ctrv
-    """
-    r = np.asarray(returns, dtype=np.float64)
+    """Compute all seven daily realised-variance estimators."""
+    r = _clean_returns(returns)
     return {
-        "rv5m":  compute_rv5m(r),
-        "rk":    compute_realized_kernel(r),
-        "tsrv":  compute_tsrv(r),
-        "bpv":   compute_bpv(r),
-        "pav":   compute_pav(r),
+        "rv5m": compute_rv5m(r),
+        "rk": compute_realized_kernel(r),
+        "tsrv": compute_tsrv(r),
+        "bpv": compute_bpv(r),
+        "pav": compute_pav(r),
         "pabpv": compute_pabpv(r),
-        "ctrv":  compute_ctrv(r),
+        "ctrv": compute_ctrv(r),
     }

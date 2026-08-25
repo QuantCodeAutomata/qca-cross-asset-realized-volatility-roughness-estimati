@@ -1,136 +1,181 @@
-# Experiment 1 Results: Cross-Asset Realized-Volatility Roughness
+# Audited experiment results
 
-## Setup
-- **Assets**: 50 equity + 10 futures analogs (60 total)
-- **Simulation**: fOU rough-vol model, Davies-Harte fBM
-- **Days**: 252  |  **Bars/day**: 390
-- **Estimators**: rv5m, rk, tsrv, bpv, pav, pabpv, ctrv
-- **Delta max**: 10 trading days
+## Overall status
 
-## Key Finding
+**Repository status after audit:** credible synthetic/numerical validation harness.
 
-Synthetic equity-analog realized volatility with ground-truth H ≈ 0.12 is correctly identified as rough (H < 0.5) by all seven estimators.
+**Paper-replication status:** **not empirically replicated**. The repository does
+not contain the paper's Nasdaq, CME, or OPRA panels. Only Experiment 2 is a
+direct numerical reproduction of a paper calculation; Experiments 1, 3, and 4
+are controlled synthetic validations.
 
-## Cross-Sectional H Distribution by Estimator
+## Experiment 1 - realized-H estimator recovery
 
-| Estimator | Median H | Mean H | Q25   | Q75   | Std   | N  |
-|-----------|----------|--------|-------|-------|-------|----|
-| pabpv     | 0.0725   | 0.0718 | 0.0417 | 0.1072 | 0.0508 | 60 |
-| rk        | 0.0948   | 0.0981 | 0.0641 | 0.1431 | 0.0557 | 60 |
-| rv5m      | 0.0959   | 0.0935 | 0.0529 | 0.1332 | 0.0529 | 60 |
-| bpv       | 0.0998   | 0.1074 | 0.0653 | 0.1530 | 0.0592 | 60 |
-| ctrv      | 0.1016   | 0.1086 | 0.0674 | 0.1529 | 0.0583 | 60 |
-| tsrv      | 0.1018   | 0.1085 | 0.0674 | 0.1535 | 0.0582 | 60 |
+### Question tested
 
-## TSRV Estimator Bias
-Mean bias (H_hat - H_true): -0.0181
+Can the seven realized-variance estimators and the short-lag H regression recover
+rough synthetic daily volatility at approximately the right scale?
 
-## Output Files
-- `exp1_results.csv` — full per-asset results
-- `exp1_summary.csv` — summary statistics
-- `hurst_distribution.png` — cross-sectional H histogram
-- `loglog_*.png` — representative log-log scaling fit
+### Configuration
 
----
+- 8 synthetic asset classes centered on the paper's reported class medians;
+- 2 assets per class, 16 assets total;
+- 1,000 trading days and 390 returns per day;
+- daily fOU parameters in trading-day units;
+- log-variance standard deviation 1.05 and mean annualized volatility 12.8%;
+- non-overlapping `Delta=1,...,10` scaling regression.
 
-# Experiment 2 Results: Mean-Reversion Contamination of Short-Lag Hurst Estimation
+### Estimator results
 
-## Setup
-- **Model**: Fractional Ornstein-Uhlenbeck (fOU), dX_t = -κ X_t dt + ν dB_t^H
-- **H grid**: {0.05, 0.10, 0.15, 0.20, 0.30, 0.50}
-- **κ grid**: {0, 0.003, 0.010, 0.020, 0.035}
-- **Δ_max**: {10, 40}
-- **Method**: exact spectral integration + asymptotic OLS bias approximation
+| estimator | median H | median bias | mean absolute error | median R2 |
+|---|---:|---:|---:|---:|
+| BPV | 0.0917 | +0.0037 | 0.0223 | 0.7416 |
+| C-TRV | 0.0921 | +0.0037 | 0.0229 | 0.7385 |
+| PABPV | 0.0759 | -0.0158 | 0.0247 | 0.5752 |
+| PAV | 0.0792 | -0.0110 | 0.0247 | 0.5928 |
+| RK | 0.0892 | -0.0001 | 0.0237 | 0.6906 |
+| RV5m | 0.0865 | -0.0019 | 0.0245 | 0.6863 |
+| TSRV | 0.0866 | -0.0032 | 0.0243 | 0.6559 |
 
-## Key Finding
-At **Δ_max = 10**, the induced mean-reversion bias |H_hat − H| is at most **~0.001–0.005** for
-empirically relevant κ ≤ 0.020, confirming the paper's claim that short-lag estimation
-is robust to stationary mean reversion. Bias grows substantially at Δ_max = 40.
+### Interpretation
 
-## Benchmark Cell (H=0.20, κ=0.010, Δ_max=10)
-- H_hat_exact ≈ **0.1987** (true H = 0.20, bias ≈ −0.0013) ✓ near paper target 0.198
+The implementation now recovers the rough regime without the previous PAV,
+PABPV, TSRV, and RK normalization defects. It does **not** reproduce the paper's
+empirical cross-section:
 
-## Bias Table Summary (selected rows, Δ_max = 10)
+- the class labels are simulation targets, not observed asset classes;
+- two paths per class are insufficient to validate a cross-sectional ordering;
+- median synthetic `R2` is about `0.58-0.74`, materially below the paper's
+  quality-equity median of about `0.988`;
+- no equity quality subset, one-second subset, delisting treatment, or futures
+  roll panel is present.
 
-| H    | κ     | H_hat_exact | bias_exact | bias_approx |
-|------|-------|-------------|------------|-------------|
-| 0.10 | 0.000 | 0.1000      | 0.0000     | 0.0000      |
-| 0.10 | 0.010 | 0.0993      | −0.0007    | −0.0015     |
-| 0.10 | 0.020 | 0.0979      | −0.0021    | −0.0052     |
-| 0.20 | 0.010 | 0.1987      | −0.0013    | −0.0017     |
-| 0.20 | 0.020 | 0.1975      | −0.0025    | −0.0059     |
-| 0.30 | 0.020 | 0.2965      | −0.0035    | −0.0065     |
+**Classification:** synthetic implementation validation only.
 
-## Output Files
-- `exp2_bias_table.csv` — full (H, κ, Δ_max) grid with exact and approximate biases
-- `exp2_bias_heatmap.png` — heatmap of exact bias at Δ_max = 10
-- `exp2_local_slope.png` — local slope α(Δ) curves
-- `exp2_log_m2.png` — log M_2(Δ) scaling curves
+## Experiment 2 - mean-reversion contamination
 
----
+### Question tested
 
-# Experiment 3 Results: Measurement-Error Attenuation and Two-Estimator Correction
+Does the exact stationary-fOU second moment produce the paper's reported small
+short-lag downward bias and increasing long-window contamination?
 
-## Setup
-- **Model**: fOU rough-vol simulation, H ≈ 0.20 benchmark
-- **Days**: 2520 trading days, 390 bars/day
-- **Paths**: 20 Monte Carlo paths (production uses 400–1000)
-- **Noise SD**: varpi ∈ {1×10⁻⁴ (baseline), 5×10⁻⁴ (stressed)}
-- **Estimators**: RV5m, TSRV (and latent log-variance)
-- **Correction**: two-estimator autocovariance-fit framework (RV5m vs TSRV)
+### Key cells
 
-## Key Finding
-Microstructure noise **attenuates** raw H estimates relative to the latent truth.
-At varpi = 1×10⁻⁴, raw H_RV5m ≈ 0.085 vs latent H ≈ 0.195.
-The two-estimator correction **raises** estimates toward true H, but can overshoot
-in rough regimes (short Δ_max = 10) — consistent with paper expectations.
-Estimates remain far below 0.5 even after correction.
+| H | kappa | Delta max | exact H hat | bias |
+|---:|---:|---:|---:|---:|
+| 0.10 | 0.020 | 10 | 0.097871 | -0.002129 |
+| 0.20 | 0.010 | 10 | 0.198305 | -0.001695 |
+| 0.20 | 0.020 | 10 | 0.195405 | -0.004595 |
+| 0.20 | 0.010 | 40 | 0.191172 | -0.008828 |
+| 0.20 | 0.020 | 40 | 0.178486 | -0.021514 |
+| 0.20 | 0.020 | 100 | 0.145799 | -0.054201 |
 
-## Monte Carlo Summary (varpi = 1e-4, Δ_max = 10)
+The primary benchmark, `H=0.20`, `kappa=0.010`, `Delta_max=10`, gives
+`H_hat=0.198305`, very close to the paper's `0.1982` table value. The lag-10
+bias remains below 0.005 over the paper's core rough region
+`H<=0.20, kappa<=0.020`, while longer windows bend downward strongly.
 
-| Metric            | Median  |
-|-------------------|---------|
-| H_latent          | ~0.195  |
-| H_RV5m (raw)      | ~0.085  |
-| H_TSRV (raw)      | ~0.068  |
-| H_corrected_RV5m  | ~0.100  |
-| H_corrected_TSRV  | ~0.080  |
+**Classification:** strong direct numerical reproduction.
 
-## Output Files
-- `exp3_simulation_results.csv` — per-path results for both varpi values
-- `exp3_attenuation_boxplot.png` — raw vs corrected H distributions
-- `exp3_correction_comparison.png` — latent vs observed vs corrected H
+## Experiment 3 - measurement error and correction
 
----
+### Question tested
 
-# Experiment 4 Results: Option-Implied Hurst from ATM Skew Term Structure
+Does one-minute realized-volatility measurement error attenuate H, and does the
+paper's RV5m/RK two-estimator correction raise it under the baseline noise
+regime without manufacturing pathological outputs?
 
-## Setup
-- **Method**: pooled log|ψ(T)| = a_t + β log T regression; H_IV = β + 0.5
-- **Identification criterion**: R²_ψ ≥ 0.30
-- **Maturity window**: 14 days – 1 year
-- **Asset classes**: equity index, rates, FX, energy (synthetic data)
+### Configuration
 
-## Key Finding
-- **Equity indices**: clean power-law skew, R²_ψ ≈ 0.86, H_IV ≈ 0.249 ✓ identified
-- **Energy**: R²_ψ ≈ 0.84, H_IV ≈ 0.151 ✓ identified
-- **Rates**: R²_ψ ≈ 0.055 ✗ NOT identified (near-symmetric smile, weak skew signal)
-- **FX**: R²_ψ ≈ 0.112 ✗ NOT identified (consistent with paper)
+- 20 paired Monte Carlo paths;
+- 2,520 days and 390 one-minute returns per day;
+- `H=0.20`, `kappa=0.010` per trading day;
+- latent log-variance standard deviation 1.05;
+- mean annualized volatility 12.8%;
+- price noise `varpi in {1e-4, 5e-4}`;
+- correction pair RV5m/RK;
+- corrected curves refit at lags 10 and 40.
 
-Implied H > realized H for equity indices (~0.249 vs ~0.120), consistent with
-rough-vol theory where the leverage channel amplifies the skew term-structure slope.
+### Results
 
-## Asset-Class Results (14d–1y pooled)
+| varpi | latent H10 | RV5m H10 | RK H10 | corrected RK H10 | corrected RK H40 | valid primary correction |
+|---:|---:|---:|---:|---:|---:|---:|
+| 1e-4, mean | 0.1918 | 0.1750 | 0.1827 | 0.2444 | 0.2145 | 100% |
+| 1e-4, median | 0.1903 | 0.1739 | 0.1822 | 0.2042 | 0.1902 | - |
+| 5e-4, mean | 0.1918 | 0.1463 | 0.1724 | 0.3965 | 0.2897 | 95% |
+| 5e-4, median | 0.1903 | 0.1443 | 0.1714 | 0.3595 | 0.2669 | - |
 
-| Asset Class  | H_IV  | R²_ψ  | Identified |
-|--------------|-------|-------|------------|
-| equity_index | 0.249 | 0.860 | ✓          |
-| energy       | 0.151 | 0.841 | ✓          |
-| rates        | 0.242 | 0.055 | ✗          |
-| fx           | 0.140 | 0.112 | ✗          |
+At baseline noise, raw RV5m and RK are close to the paper's Table 4 values
+(approximately 0.181 and 0.180). The correction moves H upward, but its mean is
+right-skewed; the median lag-10 correction is 0.204 rather than 0.244. This is a
+weakly identified bracket, not a stable point estimate.
 
-## Output Files
-- `exp4_implied_hurst_results.csv` — per-asset-class pooled estimates and R²_ψ
-- `exp4_skew_term_structure.png` — log|ψ| vs log T with power-law fits
-- `exp4_implied_h_by_asset.png` — bar chart of H_IV by asset class
-- `exp4_implied_vs_realized.png` — scatter of implied vs realized H
+At stressed noise, the raw attenuation remains informative, but the iid additive
+log-noise assumption fails. The high corrected values are therefore evidence of
+correction breakdown, not successful recovery.
+
+The submitted implementation previously emitted corrected H values above 4 and
+6 after clipping non-positive moments to `1e-12`. The audited implementation
+returns `NaN` and diagnostics for infeasible or non-interpretable corrected
+curves, and all finite corrected H values are constrained to `(0,1)`.
+
+**Classification:** partial synthetic reproduction of attenuation; correction
+behavior remains fragile, consistently with the paper's warning.
+
+## Experiment 4 - option-skew identification
+
+### Question tested
+
+Can a strike-level synthetic option pipeline first estimate the ATM skew and then
+correctly identify, or reject, its maturity power law?
+
+### Results
+
+| underlier | synthetic structure | H hat IV | target | pooled R2 | identified |
+|---|---|---:|---:|---:|:---:|
+| ES-like | power law | 0.2486 | 0.25 | 0.6031 | yes |
+| ZW-like | power law | 0.0827 | 0.08 | 0.5335 | yes |
+| ZN-like | weak skew | 0.5231 | - | 0.0005 | no |
+| 6E-like | weak skew | 0.5191 | - | 0.0004 | no |
+| NG-like | seasonal maturity pattern | 0.5148 | - | 0.0003 | no |
+
+For the unidentified rows, the reported numerical H is intentionally treated as
+meaningless: the fitted slope explains essentially none of the within-date
+maturity variation. This is the correct interpretation of the paper's rate, FX,
+and seasonal-commodity failure taxonomy.
+
+The submitted experiment had generated class-level power laws directly, so the
+estimated H was largely encoded in the data generator; it also declared a
+stylized energy class strongly identified. The audited experiment starts from
+strike-level smiles and deliberately includes weak and seasonal failure cases.
+
+**Classification:** synthetic end-to-end identification test, not an option-data
+replication.
+
+## Final assessment
+
+The corrected code can support the following claims:
+
+1. the short-lag H estimator and seven RV measures are implemented at a credible
+   numerical scale;
+2. the paper's fOU mean-reversion table is reproduced closely;
+3. the simulated measurement-error attenuation is reproduced near the paper's
+   benchmark after fixing units and volatility calibration;
+4. the correction is fragile and should be reported as a bracket with validity
+   diagnostics;
+5. the option-skew method must be rejected when its pooled maturity regression
+   has negligible explanatory power.
+
+It cannot support the following claims without real data:
+
+1. realized volatility is rough across 3,926 equities and 34 CME roots;
+2. the paper's asset-class ranking is independently reproduced;
+3. the quality-equity median and `R2` distribution are reproduced;
+4. the empirical implied-versus-realized results for 41 underlyings are
+   reproduced;
+5. robustness to the paper's data filters, contract rolls, option-chain
+   construction, and one-second sampling is established.
+
+**Independent verdict:** the submitted repository was not a paper replication;
+it was a partly broken synthetic demonstration. After the audit it is a useful
+and testable validation harness, but the empirical replication remains open.

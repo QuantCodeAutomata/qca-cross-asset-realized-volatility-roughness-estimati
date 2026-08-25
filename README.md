@@ -1,156 +1,191 @@
-# Cross-Asset Realized-Volatility Roughness Estimation
+# Audited Rough-Volatility Replication Harness
 
-Empirical study of realized-volatility roughness across equities, equity indices,
-fixed-income, commodity, and FX futures using the Hurst exponent framework of
-Gatheral, Jaisson & Rosenbaum (2018).  Seven noise-robust realized-variance
-estimators are used to construct daily log-RV series, whose Hurst exponent is
-estimated via second-moment log-log regression.
+This repository is an audited **synthetic and numerical validation harness** for
+Saad Mouti's *Rough Volatility Across Assets* (2026). It is not the paper's
+empirical Nasdaq/CME/OPRA replication: the market-data panels used in the paper
+are not included here.
 
----
+The distinction matters:
 
-## Project Structure
+- **Experiment 2** directly reproduces the paper's exact fOU mean-reversion
+  calculation.
+- **Experiments 1, 3, and 4** test the estimator pipeline on controlled synthetic
+  data and compare the outputs with paper benchmarks.
+- None of the synthetic experiments can establish the paper's cross-sectional
+  asset-class ranking or option-market findings in real data.
 
-```
+The submitted version was audited and corrected for estimator normalization,
+time-unit, missing-date, simulation-calibration, correction-stability, and
+option-identification errors. A private SPY minute-bar run now also validates
+the central roughness result on real data without committing the market panel.
+See [`AUDIT_REPORT.md`](AUDIT_REPORT.md) for the English audit and real-data
+validation report, and [`results/RESULTS.md`](results/RESULTS.md) for the
+synthetic experiment outputs.
+
+## Repository map
+
+```text
 .
 ├── data/
-│   ├── __init__.py
-│   └── data_loader.py          # Massive API loader + synthetic data generator
-├── src/
-│   ├── __init__.py
-│   ├── preprocessing/
-│   │   ├── __init__.py
-│   │   ├── equity.py           # Equity intraday preprocessing
-│   │   └── futures.py          # Futures roll & preprocessing
-│   ├── rv_estimators.py        # 7 realized-variance estimators
-│   ├── hurst_realized.py       # Hurst estimation via scaling regressions
-│   ├── aggregation.py          # Daily → weekly/monthly RV aggregation
-│   └── plots_realized.py       # Publication-quality figures
+│   └── data_loader.py                 # optional Massive loaders + synthetic panel wrapper
 ├── exp/
-│   └── exp1_realized_hurst.py  # Experiment 1: cross-sectional Hurst
-├── tests/
-│   ├── __init__.py
-│   └── test_rv_estimators.py   # Pytest unit tests
-├── results/                    # Auto-generated outputs (gitignored except RESULTS.md)
-├── README.md
-└── .gitignore
+│   ├── exp1_realized_hurst.py         # synthetic realized-H estimator recovery
+│   ├── exp2_mean_reversion.py         # exact fOU mean-reversion calculation
+│   ├── exp3_measurement_error.py      # measurement error + two-estimator correction
+│   ├── exp4_implied_hurst.py          # strike-level synthetic option-skew identification
+│   └── exp5_spy_empirical.py          # private-output Massive SPY real-data pilot
+├── src/
+│   ├── autocovariance_fit.py          # additive log-noise correction
+│   ├── fou_spectral.py                # exact stationary-fOU second moment
+│   ├── hurst_realized.py              # non-overlapping short-lag H estimator
+│   ├── implied_hurst.py               # daily and pooled ATM-skew regressions
+│   ├── preprocessing/                 # causal grid construction
+│   ├── rv_estimators.py               # RV5m, RK, TSRV, PAV, PABPV, BPV, C-TRV
+│   └── simulate_rough_paths.py        # canonical fGn/fOU and intraday simulation
+├── tests/                              # regression and behavioral tests
+└── results/                            # generated CSV, JSON, Markdown, and figures
 ```
 
----
+## Corrected methodological conventions
 
-## Realized-Variance Estimators
+### Realized-H estimator
 
-| Symbol  | Name                                 | Noise-robust | Jump-robust |
-|---------|--------------------------------------|:------------:|:-----------:|
-| RV5m    | 5-minute subsampled RV               | ✓ (mild)     | ✗           |
-| RK      | Realized Kernel (Parzen)             | ✓✓           | ✗           |
-| TSRV    | Two-Scale Realized Variance          | ✓✓           | ✗           |
-| BPV     | Bipower Variation                    | ✗            | ✓           |
-| PAV     | Pre-Averaged Variance                | ✓✓           | ✗           |
-| PABPV   | Pre-Averaged Bipower Variation       | ✓✓           | ✓           |
-| C-TRV   | Corrected Threshold Realized Variance| ✗            | ✓✓          |
+For daily log realized variance `X_t`, the paper's primary estimator is
 
----
+```text
+m(2, Delta) = mean_k (X_(k+1)Delta - X_kDelta)^2
+log m(2, Delta) = a + 2 H log Delta + u_Delta,
+Delta = 1, ..., 10.
+```
 
-## Experiments
+`src/hurst_realized.py` uses exact **non-overlapping** increments by default and
+preserves missing calendar dates. It does not add a zero increment or a short
+terminal block.
 
-### Experiment 1 — Cross-Sectional Realized Hurst (Equities)
-**Script:** `exp/exp1_realized_hurst.py`
+### Realized-variance estimators
 
-Estimates the Hurst exponent H for a cross-section of equities (or synthetic
-analogs) using all seven RV estimators.  The scaling regression
+`src/rv_estimators.py` implements:
 
-    log m(2, Δ) = a + b · log Δ,   H = b / 2
+| Key | Estimator | Main role |
+|---|---|---|
+| `rv5m` | five-minute realized variance | benchmark |
+| `rk` | Parzen realized kernel | microstructure-noise robust |
+| `tsrv` | two-scale realized variance | microstructure-noise robust |
+| `pav` | pre-averaged realized variance | microstructure-noise robust |
+| `pabpv` | pre-averaged bipower variation | noise and jump robust |
+| `bpv` | bipower variation | jump robust |
+| `ctrv` | corrected threshold realized variance | jump robust |
 
-is run for Δ = 1, …, 10 trading days.  Output: distribution of H across assets,
-table of median H by estimator, and representative log-log scaling plots.
+Inputs are intraday **log returns**. TSRV is formed from staggered K-step price
+grids; RK uses the corrected data-driven bandwidth; PAV/PABPV use the standard
+triangular-weight constants `psi_1 = 1` and `psi_2 = 1/12`.
 
-**Key finding (target):** Equity realized volatility is rough (H ≈ 0.10–0.15),
-consistent with Gatheral et al. (2018), and this roughness is robust across all
-seven estimators.
+### Measurement-error correction
 
----
+The correction keeps the signed moment gap
 
-### Experiment 2 — Futures Asset-Class Comparison
-**Script:** `exp/exp2_futures_hurst.py` *(forthcoming)*
+```text
+delta_m = mean_Delta(m_a(2, Delta) - m_b(2, Delta))
+omega_a^2 - omega_b^2 = delta_m / 2
+```
 
-Extends the Hurst analysis to continuous front-month futures across five asset
-classes: equity indices, fixed income, energy, metals, and FX.  Uses the
-volume-overtake roll rule implemented in `src/preprocessing/futures.py`.
+and jointly fits lags 0, 1, and 2 of the increment autocovariances. Infeasible or
+pathological corrected moment curves return `NaN` plus diagnostics rather than
+being clipped to a tiny positive number. The intended empirical pair is RV5m
+and RK.
 
-**Key finding (target):** Equity-index futures share the low-H regime of single
-stocks.  Fixed-income and FX futures exhibit slightly higher H (≈ 0.15–0.25)
-while energy and metals span a wider range.
+## Install and verify
 
----
-
-### Experiment 3 — Temporal Aggregation and Hurst Stability
-**Script:** `exp/exp3_aggregation_hurst.py` *(forthcoming)*
-
-Tests whether the estimated H is stable across daily, weekly, and monthly
-aggregation of realized variance using the utilities in `src/aggregation.py`.
-Under the rough-volatility model, H should be invariant to aggregation level.
-
-**Key finding (target):** H estimates are stable (within one standard error)
-across aggregation frequencies, confirming the power-law scaling property of the
-rough volatility model.
-
----
-
-### Experiment 4 — Estimator Robustness to Microstructure Noise
-**Script:** `exp/exp4_noise_robustness.py` *(forthcoming)*
-
-Uses the synthetic data generator (`data/data_loader.py::generate_synthetic_intraday`)
-with a known ground-truth H to benchmark estimator bias and variance under
-increasing levels of microstructure noise.
-
-**Key finding (target):** Noise-robust estimators (RK, TSRV, PAV, PABPV)
-recover the true H with negligible bias; RV5m shows upward bias for H when noise
-is large, while BPV and C-TRV are noisy but unbiased.
-
----
-
-## Quick Start
+Python 3.11+ is recommended.
 
 ```bash
-# Install dependencies
-pip install numpy pandas scipy statsmodels matplotlib seaborn massive
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+pytest -q
+```
 
-# Run Experiment 1
+The Massive client is optional and only needed for the loader functions:
+
+```bash
+pip install massive
+export MASSIVE_TOKEN="..."
+```
+
+The experiment scripts default to synthetic data and require no API key.
+
+## Run the real-data SPY pilot without committing market data
+
+The empirical runner writes all raw bars, daily market-derived series, receipts,
+and figures to `.local/spy_empirical` by default. That directory and the known
+empirical output basenames are gitignored.
+
+```bash
+pip install -r requirements-empirical.txt
+export MASSIVE_TOKEN="..."
+python exp/exp5_spy_empirical.py
+
+# Recompute from an existing private cache with network access disabled:
+python exp/exp5_spy_empirical.py --offline
+```
+
+Use `--output-dir /private/path` to keep the cache outside the checkout. Never
+commit that directory. The repository contains only aggregate findings in
+[`AUDIT_REPORT.md`](AUDIT_REPORT.md).
+
+## Run the experiments
+
+```bash
 python exp/exp1_realized_hurst.py
+python exp/exp2_mean_reversion.py
+python exp/exp3_measurement_error.py
+python exp/exp4_implied_hurst.py
 ```
 
-Results are written to `results/exp1_results.csv` and `results/RESULTS.md`.
-
----
-
-## Data
-
-Real data is loaded from the Massive API.  Set the `MASSIVE_TOKEN` environment
-variable before calling any loader function:
+Useful scale controls:
 
 ```bash
-export MASSIVE_TOKEN="your_api_key"
+python exp/exp1_realized_hurst.py --n-per-class 4 --n-days 2520
+python exp/exp3_measurement_error.py --n-paths 400 --no-plots
+python exp/exp4_implied_hurst.py --n-dates 500
 ```
 
-Synthetic data requires no API key and is the default for all experiment scripts.
+Experiment 3 is the expensive step. The checked-in audit result uses 20 paths;
+the paper uses hundreds to thousands of paths depending on the table.
 
----
+## Current audited results
 
-## References
+- **Exp. 1:** all estimator medians remain in the rough regime, approximately
+  `0.076-0.092`, but median synthetic fit quality is only `R² ≈ 0.58-0.74`.
+  This validates estimator scale, not the paper's empirical cross-section.
+- **Exp. 2:** `H=0.20`, `kappa=0.010`, `Delta_max=10` gives
+  `H_hat=0.198305`, closely reproducing the paper's table.
+- **Exp. 3:** at price noise `1e-4`, mean latent/RV5m/RK estimates are
+  `0.192/0.175/0.183`; correction raises RK to `0.244` at lag 10 and `0.214`
+  at lag 40, with a right-skewed distribution. At `5e-4`, raw attenuation is
+  reproduced but the correction becomes unstable, as expected when the iid
+  additive log-noise premise fails.
+- **Exp. 4:** the strike-level synthetic pipeline identifies the ES-like and
+  ZW-like power laws and correctly refuses to interpret rate, FX, and seasonal
+  natural-gas analogs with near-zero pooled `R²`.
+- **SPY real-data pilot:** all seven realized-variance estimators remain in the
+  rough regime (`H=0.156-0.215`). Figure-compatible overlapping increments
+  reproduce the paper's SPY fits at `H=0.188`, `0.163`, and `0.071` for windows
+  `1-10`, `1-40`, and `40-250`, respectively. See the English audit report for
+  scope and sensitivity details.
 
-- Gatheral, J., Jaisson, T., & Rosenbaum, M. (2018). *Volatility is rough.*
-  Quantitative Finance, 18(6), 933–949.
-- Barndorff-Nielsen, O. E., Hansen, P. R., Lunde, A., & Shephard, N. (2008).
-  *Designing realized kernels to measure the ex-post variation of equity prices
-  in the presence of noise.* Econometrica, 76(6), 1481–1536.
-- Zhang, L., Mykland, P. A., & Aït-Sahalia, Y. (2005). *A tale of two time
-  scales.* JASA, 100(472), 1394–1411.
-- Barndorff-Nielsen, O. E., & Shephard, N. (2004). *Power and bipower variation
-  with stochastic volatility and jumps.* Journal of Financial Econometrics.
-- Jacod, J., Li, Y., Mykland, P. A., Podolskij, M., & Vetter, M. (2009).
-  *Microstructure noise in the continuous case.* Stochastic Processes and their
-  Applications, 119(8), 2249–2276.
-- Corsi, F., Pirino, D., & Renò, R. (2010). *Threshold bipower variation and
-  the impact of jumps on volatility forecasting.* Journal of Econometrics.
-- Wood, A. T. A., & Chan, G. (1994). *Simulation of stationary Gaussian
-  processes in [0, 1]^d.* Journal of Computational and Graphical Statistics.
+## Data and replication boundary
+
+The optional API loaders are not a substitute for the paper's data construction.
+A full empirical replication still requires, among other things:
+
+- the 3,926-equity panel and its survivorship/quality screens;
+- 34 continuous CME roots with the paper's volume-overtake roll rule;
+- one-second liquid-equity checks;
+- CME and OPRA option chains, put-call-parity forwards, and contract-style
+  handling;
+- asset-level diagnostics, robustness windows, and uncertainty estimates.
+
+Until those panels are supplied and run through the audited functions, the
+correct label is **audited validation harness with a single-instrument
+real-data pilot**, not **full empirical replication**.

@@ -1,0 +1,17 @@
+{
+  "experiment": "synthetic realized-H estimator validation",
+  "n_per_class": 2,
+  "n_days": 1000,
+  "n_bars": 390,
+  "class_targets": {
+    "livestock": 0.048,
+    "rates": 0.074,
+    "fx": 0.081,
+    "agriculture": 0.085,
+    "energy": 0.088,
+    "metals": 0.091,
+    "single_stock": 0.131,
+    "equity_index": 0.195
+  },
+  "seed": 20260819
+}

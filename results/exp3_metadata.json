@@ -1,0 +1,26 @@
+{
+  "experiment": "synthetic measurement-error validation",
+  "n_paths": 20,
+  "n_days": 2520,
+  "n_bars": 390,
+  "varpi": [
+    0.0001,
+    0.0005
+  ],
+  "H": 0.2,
+  "kappa_per_day": 0.01,
+  "target_logvar_std": 1.05,
+  "target_annualized_vol": 0.128,
+  "correction_pair": [
+    "rv5m",
+    "rk"
+  ],
+  "paper_reference": {
+    "H_latent": 0.198,
+    "H_rv5m": 0.181,
+    "H_rk": 0.18,
+    "H_corr_rk_10": 0.278,
+    "H_corr_rk_40": 0.238
+  },
+  "elapsed_seconds": 36.09282970428467
+}

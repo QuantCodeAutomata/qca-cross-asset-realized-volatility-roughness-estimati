@@ -1,152 +1,149 @@
-"""
-Rough volatility path simulation using Davies-Harte (circulant embedding) for fBM.
-Exp_3: Measurement-error attenuation and two-estimator correction.
-"""
+"""Simulation helpers for the rough-volatility validation experiments."""
+
+from __future__ import annotations
+
+from typing import Optional
+
 import numpy as np
-from typing import Tuple, Optional
 
 
-def simulate_fbm_davies_harte(n: int, H: float, seed: Optional[int] = None) -> np.ndarray:
-    """Simulate fractional Brownian motion increments using Davies-Harte algorithm.
+def simulate_fbm_davies_harte(
+    n: int,
+    H: float,
+    seed: Optional[int] = None,
+) -> np.ndarray:
+    """Simulate ``n`` unit-variance fGn increments by circulant embedding."""
+    if n < 1:
+        raise ValueError("n must be positive")
+    if not (0.0 < H < 1.0):
+        raise ValueError("H must lie in (0,1)")
 
-    Uses circulant embedding of the autocovariance matrix via FFT.
-
-    The fGn autocovariance at lag k:
-        gamma(k) = 0.5 * (|k+1|^(2H) - 2|k|^(2H) + |k-1|^(2H))
-
-    A circulant matrix of size m=2n is constructed with first row
-        c = [gamma(0), ..., gamma(n), gamma(n-1), ..., gamma(1)].
-
-    Its eigenvalues (via FFT) are clipped to [0, ∞) if any are slightly negative,
-    then used to generate a Gaussian vector with the correct covariance structure.
-
-    Args:
-        n: number of time steps
-        H: Hurst exponent in (0,1)
-        seed: random seed for reproducibility
-
-    Returns:
-        fBm increments (fGn) of length n, scaled to variance 1 per step
-    """
     rng = np.random.default_rng(seed)
     m = 2 * n
 
-    # fGn autocovariance
     j = np.arange(n + 1, dtype=np.float64)
-    gamma_vals = 0.5 * ((j + 1) ** (2 * H) - 2 * j ** (2 * H) + np.abs(j - 1) ** (2 * H))
+    gamma = 0.5 * (
+        (j + 1.0) ** (2.0 * H)
+        - 2.0 * j ** (2.0 * H)
+        + np.abs(j - 1.0) ** (2.0 * H)
+    )
+    gamma[0] = 1.0
 
-    # First row of circulant: [gamma(0),...,gamma(n), gamma(n-1),...,gamma(1)]
-    c = np.empty(m)
-    c[:n + 1] = gamma_vals
-    c[n + 1:] = gamma_vals[n - 1:0:-1]
+    first_row = np.empty(m, dtype=np.float64)
+    first_row[: n + 1] = gamma
+    first_row[n + 1 :] = gamma[n - 1 : 0 : -1]
 
-    # Eigenvalues via FFT (real for a symmetric circulant)
-    eigenvalues = np.real(np.fft.fft(c))
-    if np.any(eigenvalues < 0):
-        eigenvalues = np.maximum(eigenvalues, 0.0)
+    eigenvalues = np.real(np.fft.fft(first_row))
+    # Tiny negative values are numerical.  Material negatives would indicate
+    # an invalid embedding; the 2n embedding is non-negative for the grids used
+    # here, so fail rather than silently changing the covariance materially.
+    tolerance = 1e-10 * max(float(np.max(np.abs(eigenvalues))), 1.0)
+    if float(np.min(eigenvalues)) < -tolerance:
+        raise RuntimeError("Davies-Harte circulant embedding is not positive")
+    eigenvalues = np.maximum(eigenvalues, 0.0)
 
-    # Build conjugate-symmetric random vector W so that IFFT(Y) is real
-    # W[0], W[m//2] are real; W[k] = (z1 + i*z2)/sqrt(2) for k=1,...,m//2-1
     half = m // 2
-    W = np.empty(m, dtype=complex)
-    W[0] = rng.standard_normal()
-    W[half] = rng.standard_normal()
-    z1 = rng.standard_normal(half - 1)
-    z2 = rng.standard_normal(half - 1)
-    W[1:half] = (z1 + 1j * z2) / np.sqrt(2)
-    W[half + 1:] = np.conj(W[1:half][::-1])
+    spectral = np.zeros(m, dtype=np.complex128)
+    spectral[0] = np.sqrt(eigenvalues[0]) * rng.standard_normal()
+    spectral[half] = np.sqrt(eigenvalues[half]) * rng.standard_normal()
 
-    # Scale by sqrt(eigenvalues), IFFT, then multiply by sqrt(m) for correct variance
-    Y = np.sqrt(eigenvalues) * W
-    fgn = np.real(np.fft.ifft(Y)) * np.sqrt(m)
+    z_real = rng.standard_normal(half - 1)
+    z_imag = rng.standard_normal(half - 1)
+    interior = np.sqrt(eigenvalues[1:half] / 2.0) * (z_real + 1j * z_imag)
+    spectral[1:half] = interior
+    spectral[half + 1 :] = np.conj(interior[::-1])
 
+    # NumPy's ifft contains 1/m.  Multiplication by sqrt(m) yields the target
+    # covariance for the first n real components.
+    fgn = np.real(np.fft.ifft(spectral)) * np.sqrt(float(m))
     return fgn[:n]
 
 
-def simulate_fou_log_vol(n_days: int, H: float, kappa: float, nu: float = 0.5,
-                          dt: float = 1.0 / 252, seed: Optional[int] = None) -> np.ndarray:
-    """Simulate fOU log-volatility process at daily frequency.
+def simulate_fou_log_vol(
+    n_days: int,
+    H: float,
+    kappa: float,
+    nu: float = 0.5,
+    dt: float = 1.0,
+    seed: Optional[int] = None,
+    burn_in: Optional[int] = None,
+) -> np.ndarray:
+    """Simulate a daily fractional-OU approximation.
 
-    dX_t = -kappa * X_t * dt + nu * dB_t^H  (Euler-Maruyama)
+    Parameters are expressed in the same time unit as ``dt``.  For the paper's
+    tables, ``dt=1`` and ``kappa=0.010`` mean a mean-reversion speed of 0.010
+    *per trading day*.  The submitted experiment instead combined
+    ``kappa=0.010`` with ``dt=1/252``, making effective mean reversion 252 times
+    too slow.
 
-    The fBm increment at step dt satisfies dB_t^H ~ dt^H * fGn, where fGn has unit variance.
-    Mean reversion starts from the stationary mean X_0 = 0.
-    A 252-day burn-in period is discarded to reduce initial-condition effects.
+    The discrete recursion is
 
-    Args:
-        n_days: number of trading days
-        H: Hurst exponent
-        kappa: mean reversion rate (annualized)
-        nu: vol of vol (annualized)
-        dt: time step (1/252 for daily)
-        seed: random seed
+    ``X_{t+1} = exp(-kappa*dt) X_t + nu * dt^H * dB_t^H``.
 
-    Returns:
-        Log-volatility array of length n_days
+    It is a filtered-fGn approximation to stationary fOU.  For ``kappa>0`` a
+    burn-in of ten mean-reversion time constants is used by default.
     """
-    burn_in = 252
+    if n_days < 1:
+        raise ValueError("n_days must be positive")
+    if not (0.0 < H < 1.0):
+        raise ValueError("H must lie in (0,1)")
+    if kappa < 0.0 or nu <= 0.0 or dt <= 0.0:
+        raise ValueError("require kappa>=0, nu>0 and dt>0")
+
+    if burn_in is None:
+        if kappa == 0.0:
+            burn_in = 0
+        else:
+            burn_in = max(252, int(np.ceil(10.0 / (kappa * dt))))
+    if burn_in < 0:
+        raise ValueError("burn_in must be non-negative")
+
     n_total = n_days + burn_in
-
     fgn = simulate_fbm_davies_harte(n_total, H, seed=seed)
-    # fBm increment with correct dt scaling: dB^H = dt^H * fGn
-    dB = nu * dt ** H * fgn
+    innovations = nu * (dt**H) * fgn
 
-    X = np.empty(n_total)
-    X[0] = 0.0
-    mean_rev = 1.0 - kappa * dt
+    x = np.empty(n_total, dtype=np.float64)
+    x[0] = 0.0
+    rho = float(np.exp(-kappa * dt)) if kappa > 0.0 else 1.0
     for t in range(n_total - 1):
-        X[t + 1] = mean_rev * X[t] + dB[t]
+        x[t + 1] = rho * x[t] + innovations[t]
 
-    return X[burn_in:]
+    return x[burn_in:]
 
 
-def simulate_noisy_intraday_prices(log_vol: np.ndarray, n_bars: int = 390,
-                                    varpi: float = 1e-4,
-                                    seed: Optional[int] = None) -> np.ndarray:
-    """Simulate intraday price paths with microstructure noise.
+def simulate_noisy_intraday_prices(
+    log_vol: np.ndarray,
+    n_bars: int = 390,
+    varpi: float = 1e-4,
+    seed: Optional[int] = None,
+) -> np.ndarray:
+    """Simulate observed intraday log prices with additive price noise.
 
-    For each day d:
-    - Efficient log-returns: r_i ~ N(0, sigma_d^2 / n_bars) where sigma_d^2 = exp(log_vol[d])
-    - Efficient log-price: p_eff[0] = 0, p_eff[i] = p_eff[i-1] + r_i
-    - Noise: epsilon_i ~ N(0, varpi^2) i.i.d.
-    - Observed log-price: p_obs[i] = p_eff[i] + epsilon_i
-
-    Args:
-        log_vol: daily log-variance from fOU (shape: n_days)
-        n_bars: number of intraday bars per day (390 for 1-min equity)
-        varpi: noise standard deviation
-        seed: random seed
-
-    Returns:
-        observed log-price array of shape (n_days, n_bars+1)
+    The output has shape ``(n_days, n_bars+1)`` so that differencing produces
+    exactly ``n_bars`` one-minute returns per day.
     """
+    x = np.asarray(log_vol, dtype=np.float64)
+    if x.ndim != 1:
+        raise ValueError("log_vol must be one-dimensional")
+    if n_bars < 1 or varpi < 0.0:
+        raise ValueError("require n_bars>=1 and varpi>=0")
+
     rng = np.random.default_rng(seed)
-    n_days = len(log_vol)
-    p_obs = np.empty((n_days, n_bars + 1))
-
-    # sigma_d = sqrt(exp(log_vol[d])) = exp(log_vol[d] / 2)
-    sigma = np.exp(log_vol / 2.0)  # shape (n_days,)
-
-    for d in range(n_days):
-        daily_sigma = sigma[d]
-        # Efficient returns: N(0, sigma_d^2 / n_bars)
-        r_eff = rng.normal(0.0, daily_sigma / np.sqrt(n_bars), size=n_bars)
-        # Efficient cumulative log-price
-        p_eff = np.empty(n_bars + 1)
-        p_eff[0] = 0.0
-        p_eff[1:] = np.cumsum(r_eff)
-        # Microstructure noise
-        noise = rng.normal(0.0, varpi, size=n_bars + 1)
-        p_obs[d] = p_eff + noise
-
-    return p_obs
+    n_days = x.size
+    daily_sigma = np.exp(x / 2.0)
+    efficient_returns = (
+        rng.standard_normal((n_days, n_bars))
+        * daily_sigma[:, None]
+        / np.sqrt(float(n_bars))
+    )
+    efficient_prices = np.concatenate(
+        [np.zeros((n_days, 1), dtype=np.float64), np.cumsum(efficient_returns, axis=1)],
+        axis=1,
+    )
+    noise = rng.normal(0.0, varpi, size=efficient_prices.shape)
+    return efficient_prices + noise
 
 
 def compute_latent_iv(log_vol: np.ndarray) -> np.ndarray:
-    """Extract latent daily integrated variance from log-vol path.
-
-    For fOU: IV_d = exp(log_vol[d]) (by convention in the model).
-
-    Returns: IV array of length n_days
-    """
-    return np.exp(log_vol)
+    """Daily latent integrated variance under the simulation convention."""
+    return np.exp(np.asarray(log_vol, dtype=np.float64))

@@ -1,125 +1,111 @@
-"""
-Equity intraday preprocessing: minute-bar grid, forward-filling, and
-within-session return computation for realized-variance estimation.
-"""
+"""Equity intraday preprocessing for the realised-volatility pipeline."""
+
+from __future__ import annotations
+
+from typing import Callable, Tuple
 
 import numpy as np
 import pandas as pd
-from typing import Tuple, Callable, Optional
 
-SESSION_MINUTES: int = 390  # Regular NYSE/Nasdaq session (9:30 AM – 4:00 PM ET)
+SESSION_MINUTES: int = 390
 
 
-def build_minute_grid(date: pd.Timestamp) -> pd.DatetimeIndex:
-    """Build the 390-bar regular-session minute grid for a given trading date.
+def build_minute_grid(
+    date: pd.Timestamp,
+    *,
+    timestamp_convention: str = "close",
+) -> pd.DatetimeIndex:
+    """Build the 390-point regular-session minute grid.
 
-    Session: 09:30 AM – 04:00 PM Eastern Time (close-bar timestamps).
-
-    Parameters
-    ----------
-    date : pd.Timestamp
-        The trading date (date part used only).
-
-    Returns
-    -------
-    pd.DatetimeIndex
-        Length 390, minute-frequency, timezone-naive.
+    ``timestamp_convention='close'`` returns 09:31, …, 16:00, which is the
+    actual close timestamp of each one-minute interval.  ``'start'`` returns
+    09:30, …, 15:59.  The submitted code documented close timestamps but
+    silently built the start-timestamp grid.
     """
-    open_time  = pd.Timestamp(date.date()) + pd.Timedelta(hours=9, minutes=30)
-    close_time = pd.Timestamp(date.date()) + pd.Timedelta(hours=16, minutes=0)
-    return pd.date_range(start=open_time, end=close_time, freq="1min")[: SESSION_MINUTES]
+    day = pd.Timestamp(date).normalize()
+    if timestamp_convention == "close":
+        start = day + pd.Timedelta(hours=9, minutes=31)
+        end = day + pd.Timedelta(hours=16)
+    elif timestamp_convention == "start":
+        start = day + pd.Timedelta(hours=9, minutes=30)
+        end = day + pd.Timedelta(hours=15, minutes=59)
+    else:
+        raise ValueError("timestamp_convention must be 'close' or 'start'")
+    grid = pd.date_range(start=start, end=end, freq="1min")
+    if len(grid) != SESSION_MINUTES:
+        raise RuntimeError("regular-session grid must contain 390 minutes")
+    return grid
 
 
 def forward_fill_minute_prices(
     prices: pd.Series,
     date: pd.Timestamp,
+    *,
+    timestamp_convention: str = "close",
+    fill_leading: bool = False,
 ) -> Tuple[pd.Series, float]:
-    """Reindex a price series onto the 390-bar minute grid and forward-fill gaps.
+    """Reindex to the session grid and forward-fill missing bars.
 
-    Parameters
-    ----------
-    prices : pd.Series
-        Observed bar prices indexed by pd.DatetimeIndex (subset of the grid).
-    date : pd.Timestamp
-        Trading date for the grid.
-
-    Returns
-    -------
-    filled_prices : pd.Series
-        Length 390, forward-filled; remaining leading NaN bars are back-filled
-        from the first observed price.
-    fill_fraction : float
-        Fraction of grid bars that had an observed price before filling
-        (observed_bars / 390).
+    Leading missing bars have no prior in-session observation and therefore
+    remain missing by default.  ``fill_leading=True`` reproduces the previous
+    back-fill behaviour, but that introduces information from the future and
+    should not be used in causal preprocessing.
     """
-    grid = build_minute_grid(date)
+    grid = build_minute_grid(date, timestamp_convention=timestamp_convention)
     observed = prices.reindex(grid)
     fill_fraction = float(observed.notna().sum()) / SESSION_MINUTES
-    filled = observed.ffill().bfill()
+    filled = observed.ffill()
+    if fill_leading:
+        filled = filled.bfill()
     return filled, fill_fraction
 
 
-def compute_intraday_returns(prices: pd.Series) -> np.ndarray:
-    """Compute within-session log returns, excluding the overnight gap.
+def compute_intraday_returns(
+    prices: pd.Series | np.ndarray,
+    *,
+    input_is_log: bool = False,
+) -> np.ndarray:
+    """Compute consecutive within-session log returns.
 
-    Takes consecutive differences of log prices starting at bar index 1
-    (bar 0 is the session open; its return relative to the prior close is
-    excluded to avoid overnight contamination).
-
-    Parameters
-    ----------
-    prices : pd.Series
-        Log prices or price levels on the session grid (length >= 2).
-
-    Returns
-    -------
-    np.ndarray
-        Within-session log returns, length (len(prices) - 1).
-        If prices are already log-prices, this is simply np.diff(prices).
-        If prices are levels, np.diff(np.log(prices)) is applied.
+    The input representation is explicit.  Inferring it from positivity is
+    unsafe because ordinary log prices are often positive and were previously
+    logged a second time.
     """
     p = np.asarray(prices, dtype=np.float64)
-    if np.all(p > 0):
-        # Price levels: take log first
-        lp = np.log(p)
+    if p.ndim != 1:
+        raise ValueError("prices must be one-dimensional")
+    if p.size < 2:
+        return np.empty(0, dtype=np.float64)
+
+    if input_is_log:
+        log_prices = p
     else:
-        # Already log-prices
-        lp = p
-    return np.diff(lp)
+        if np.any(p <= 0.0):
+            raise ValueError("price levels must be strictly positive")
+        log_prices = np.log(p)
+    return np.diff(log_prices)
 
 
 def build_daily_rv_panel(
     intraday_df: pd.DataFrame,
     estimator_fn: Callable[[np.ndarray], float],
 ) -> pd.DataFrame:
-    """Build a panel of daily realized-variance estimates from intraday data.
-
-    Parameters
-    ----------
-    intraday_df : pd.DataFrame
-        Must have columns: date (or be groupable by date), bar_idx
-        (0-based), log_price.  The return_ column is used if present,
-        otherwise computed from log_price.
-    estimator_fn : callable
-        Function mapping a 1-D return array to a RV scalar.
-
-    Returns
-    -------
-    pd.DataFrame
-        Index: unique dates; single column rv with daily RV estimates.
-    """
+    """Build a one-column daily realised-variance panel."""
     records = []
     for date, group in intraday_df.groupby("date"):
         group = group.sort_values("bar_idx")
         if "return_" in group.columns:
-            returns = group["return_"].dropna().values
+            returns = group["return_"].dropna().to_numpy(dtype=np.float64)
         else:
-            lp = group["log_price"].values
-            returns = np.diff(lp.astype(np.float64))
-        if len(returns) < 5:
+            returns = compute_intraday_returns(
+                group["log_price"].to_numpy(dtype=np.float64), input_is_log=True
+            )
+        if returns.size < 5:
             continue
-        rv = estimator_fn(returns)
-        records.append({"date": date, "rv": rv})
-    df = pd.DataFrame(records).set_index("date")
-    df.index = pd.DatetimeIndex(df.index)
-    return df
+        records.append({"date": date, "rv": estimator_fn(returns)})
+
+    if not records:
+        return pd.DataFrame(columns=["rv"], index=pd.DatetimeIndex([], name="date"))
+    result = pd.DataFrame(records).set_index("date")
+    result.index = pd.DatetimeIndex(result.index)
+    return result

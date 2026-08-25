@@ -28,6 +28,7 @@ from src.hurst_realized import (
     compute_second_moment_scaling,
     estimate_hurst_ols,
 )
+from src.simulate_rough_paths import simulate_fbm_davies_harte
 from data.data_loader import generate_synthetic_intraday
 
 
@@ -156,16 +157,15 @@ def test_realized_kernel_fixed_lag(typical_returns):
 # ---------------------------------------------------------------------------
 
 def test_psi_constants():
-    """Verify psi_1 = 1/12 and psi_2 = 1 for g(x) = min(x, 1-x).
+    """Verify Jacod's psi_1 and psi_2 convention for the tent weight.
 
-    Analytical derivation:
-        psi_1 = int_0^1 min(x,1-x)^2 dx
-              = 2 * int_0^{1/2} x^2 dx = 2 * [x^3/3]_0^{1/2} = 2/24 = 1/12
-        psi_2 = int_0^1 (g'(x))^2 dx = int_0^1 1 dx = 1
+    For g(x)=min(x,1-x):
+        psi_1 = int_0^1 (g'(x))^2 dx = 1
+        psi_2 = int_0^1 g(x)^2 dx = 1/12
     """
     psi1, psi2 = compute_psi_constants()
-    np.testing.assert_allclose(psi1, 1.0 / 12.0, rtol=1e-12)
-    np.testing.assert_allclose(psi2, 1.0, rtol=1e-12)
+    np.testing.assert_allclose(psi1, 1.0, rtol=1e-12)
+    np.testing.assert_allclose(psi2, 1.0 / 12.0, rtol=1e-12)
 
 
 # ---------------------------------------------------------------------------
@@ -236,22 +236,11 @@ def test_ctrv_no_jump_equals_rv():
 # ---------------------------------------------------------------------------
 
 def test_all_estimators_consistent(typical_returns):
-    """All estimators should produce finite, non-negative RV values.
-
-    For clean simulated data (no microstructure noise), PAV is noise-corrected
-    to zero — this is expected behaviour.  We therefore require at least 6 of 7
-    estimators to be strictly positive and their max/min ratio to be bounded.
-    """
+    """All seven estimators should be finite and positive on a typical day."""
     est = compute_all_estimators(typical_returns)
-    # Every estimator must return a finite, non-negative number
-    for name, v in est.items():
-        assert np.isfinite(v), f"{name} returned non-finite value {v}"
-        assert v >= 0.0, f"{name} returned negative value {v}"
-    # At least 6 estimators should be strictly positive
-    positive = [v for v in est.values() if v > 0]
-    assert len(positive) >= 6, (
-        f"Expected ≥ 6 positive estimators, got {len(positive)}: {est}"
-    )
+    for name, value in est.items():
+        assert np.isfinite(value), f"{name} returned non-finite value {value}"
+        assert value > 0.0, f"{name} should be positive, got {value}"
 
 
 def test_all_estimators_keys():
@@ -259,6 +248,50 @@ def test_all_estimators_keys():
     r = np.random.default_rng(0).standard_normal(390) * 0.001
     est = compute_all_estimators(r)
     assert set(est.keys()) == {"rv5m", "rk", "tsrv", "bpv", "pav", "pabpv", "ctrv"}
+
+
+def test_tsrv_matches_manual_staggered_price_grid():
+    """TSRV must use K-step price differences on every staggered grid."""
+    returns = np.array([0.10, -0.20, 0.05, 0.30, -0.10, 0.20, 0.04])
+    K = 3
+    prices = np.r_[0.0, np.cumsum(returns)]
+    slow_rvs = []
+    counts = []
+    for offset in range(K):
+        grid_returns = np.diff(prices[offset::K])
+        if grid_returns.size:
+            slow_rvs.append(float(np.sum(grid_returns**2)))
+            counts.append(grid_returns.size)
+    expected = np.mean(slow_rvs) - (np.mean(counts) / len(returns)) * np.sum(returns**2)
+    np.testing.assert_allclose(
+        compute_tsrv(returns, K=K, clip=False), expected, rtol=0.0, atol=1e-14
+    )
+
+
+def test_pav_recovers_clean_integrated_variance_in_monte_carlo():
+    """PAV should have the correct scale on clean high-frequency Brownian data."""
+    rng = np.random.default_rng(1234)
+    n = 2_000
+    iv = 0.04
+    estimates = []
+    for _ in range(120):
+        returns = rng.normal(0.0, np.sqrt(iv / n), size=n)
+        estimates.append(compute_pav(returns, clip=False))
+    mean_estimate = float(np.mean(estimates))
+    assert abs(mean_estimate - iv) < 0.004, mean_estimate
+
+
+def test_pabpv_has_correct_order_of_magnitude_on_clean_data():
+    """PABPV must not be smaller by the erroneous factor of twelve."""
+    rng = np.random.default_rng(4321)
+    n = 2_000
+    iv = 0.04
+    estimates = []
+    for _ in range(120):
+        returns = rng.normal(0.0, np.sqrt(iv / n), size=n)
+        estimates.append(compute_pabpv(returns))
+    mean_estimate = float(np.mean(estimates))
+    assert 0.030 < mean_estimate < 0.047, mean_estimate
 
 
 # ---------------------------------------------------------------------------
@@ -271,13 +304,9 @@ def test_second_moment_scaling_power_law():
     We test on a long fBM path with known H and verify the OLS slope
     is within 0.10 of the true value (accounting for finite-sample noise).
     """
-    from data.data_loader import _fgn_davies_harte
-    rng = np.random.default_rng(123)
     H_true = 0.15
     n = 2000
-    fgn = _fgn_davies_harte(n, H_true, rng)
-    # Cumulative sum gives fBM path
-    fbm = np.cumsum(fgn)
+    fgn = simulate_fbm_davies_harte(n, H_true, seed=123)
     # log of squared increments as a proxy for log-RV
     log_rv = np.log(np.maximum(fgn**2, 1e-30))
     deltas, m2 = compute_second_moment_scaling(log_rv, delta_max=10)

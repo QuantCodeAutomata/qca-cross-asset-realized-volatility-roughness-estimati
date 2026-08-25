@@ -137,3 +137,11 @@ def test_tsrv_returns_scalar():
     returns = rng.normal(0, 0.001, 500)
     tsrv = compute_tsrv(returns)
     assert np.isfinite(tsrv)
+
+
+def test_second_moment_nonoverlap_endpoint_convention():
+    """Use exact Δ-separated endpoints without an artificial zero increment."""
+    series = np.array([0.0, 1.0, 2.0, 3.0])
+    deltas, moments = compute_second_moment_scaling(series, delta_max=2)
+    np.testing.assert_array_equal(deltas, np.array([1.0, 2.0]))
+    np.testing.assert_allclose(moments, np.array([1.0, 4.0]))

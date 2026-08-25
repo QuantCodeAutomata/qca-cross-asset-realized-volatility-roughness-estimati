@@ -19,6 +19,22 @@ ENV/
 # Raw data files (keep fixtures only)
 data/*.parquet
 data/*.csv
+.local/
+**/raw_cache/
+data_quality_summary.csv
+daily_realized_variance.csv
+daily_realized_variance.parquet
+second_moment_scaling.csv
+hurst_estimates.csv
+increment_convention_sensitivity.csv
+return_convention_sensitivity.csv
+measurement_error_correction.json
+return_convention_correction_sensitivity.json
+manifest.json
+manifest_cached_rerun.json
+manifest_network_run.json
+manifest_offline_rerun.json
+spy_tsrv_loglog.png
 
 # Exclude only raw downloaded API dumps from results
 # Generated experiment outputs (CSVs, PNGs, RESULTS.md) are deliverables → committed

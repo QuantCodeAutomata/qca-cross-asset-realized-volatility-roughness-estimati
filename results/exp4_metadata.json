@@ -1,0 +1,13 @@
+{
+  "experiment": "synthetic strike-level option-skew validation",
+  "n_dates": 250,
+  "maturity_day_count": 365,
+  "underliers": [
+    "ES_like",
+    "ZW_like",
+    "ZN_like",
+    "6E_like",
+    "NG_like"
+  ],
+  "seed": 20260819
+}

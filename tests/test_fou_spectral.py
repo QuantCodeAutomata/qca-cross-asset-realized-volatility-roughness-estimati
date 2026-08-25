@@ -60,6 +60,15 @@ def test_m2_positive():
             )
 
 
+
+
+def test_m2_supports_smooth_h_above_half_without_endpoint_failure():
+    """The spectral integral is finite on the whole H in (0, 1)."""
+    values = [compute_exact_m2(delta, H=0.80, kappa=0.01) for delta in (1.0, 2.0, 5.0)]
+    assert np.all(np.isfinite(values))
+    assert np.all(np.asarray(values) > 0.0)
+    assert values[0] < values[1] < values[2]
+
 def test_m2_mean_reversion_reduces_variance():
     """Mean reversion (kappa>0) should reduce M_2(Δ) relative to kappa=0."""
     H, nu = 0.25, 1.0

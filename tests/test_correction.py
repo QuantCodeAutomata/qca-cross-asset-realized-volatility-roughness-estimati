@@ -105,6 +105,16 @@ def test_noise_subtracts_at_lag1():
     )
 
 
+
+
+def test_empirical_autocovariance_preserves_missing_date_gaps():
+    """NaN dates must not be compressed into artificial adjacent increments."""
+    series = np.array([0.0, 1.0, np.nan, 5.0, 7.0])
+    gamma = compute_empirical_autocovariances(series, max_lag=0, demean=True)
+    # The only finite increments are 1 and 2, whose demeaned variance is 0.25.
+    np.testing.assert_allclose(gamma[0], 0.25, rtol=0.0, atol=1e-12)
+
+
 # ---------------------------------------------------------------------------
 # fBM simulation
 # ---------------------------------------------------------------------------
@@ -188,3 +198,39 @@ def test_correction_raises_h():
     )
     # Both should be in the rough domain
     assert H_raw < 0.5 and H_corr < 0.5
+
+
+def test_correction_preserves_signed_noise_variance_difference():
+    """The fitted variances must satisfy the signed delta-m constraint exactly."""
+    n = 8_000
+    fgn = simulate_fbm_davies_harte(n, 0.20, seed=1)
+    latent = np.r_[0.0, np.cumsum(fgn)]
+    rng = np.random.default_rng(2)
+    # Estimator b is deliberately noisier, so delta_m and the difference are negative.
+    series_a = latent + rng.normal(0.0, 0.10, n + 1)
+    series_b = latent + rng.normal(0.0, 0.40, n + 1)
+
+    result = fit_two_estimator_correction(series_a, series_b, delta_max=10)
+    assert result["delta_m"] < 0.0
+    assert result["omega_b2"] > result["omega_a2"]
+    np.testing.assert_allclose(
+        result["omega_a2"] - result["omega_b2"],
+        result["delta_m"] / 2.0,
+        rtol=0.0,
+        atol=1e-10,
+    )
+
+
+def test_correction_never_returns_pathological_h_from_clipped_moments():
+    """Infeasible corrections are explicit NaNs, never H values above one."""
+    # Nearly identical deterministic series make the correction poorly identified.
+    x = np.linspace(0.0, 1e-9, 100)
+    result = fit_two_estimator_correction(x, x + 1e-12, delta_max=10)
+    for key in (
+        "H_corrected_a",
+        "H_corrected_b",
+        "H_corrected_lag40_a",
+        "H_corrected_lag40_b",
+    ):
+        value = result[key]
+        assert np.isnan(value) or 0.0 < value < 1.0, (key, value)

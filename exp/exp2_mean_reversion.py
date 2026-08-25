@@ -7,7 +7,7 @@ under fOU dynamics for a grid of (H, kappa, delta_max) values.
 Full-scale settings (documented):
     H_values   = [0.05, 0.10, 0.15, 0.20, 0.30, 0.50]
     kappa_values = [0, 0.003, 0.010, 0.020, 0.035]
-    delta_max_values = [10, 40]
+    delta_max_values = [10, 20, 40, 100]
 """
 import sys
 import os
@@ -17,12 +17,11 @@ import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
 
 # Make src importable
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from src.fou_spectral import compute_m2_grid, local_slope_asymptotic, spectral_density
+from src.fou_spectral import compute_m2_grid, local_slope_asymptotic
 from src.mean_reversion_bias import (
     build_bias_table,
     compute_exact_ols_h,
@@ -35,7 +34,7 @@ os.makedirs(RESULTS_DIR, exist_ok=True)
 # ── Parameter grid ────────────────────────────────────────────────────────────
 H_VALUES    = [0.05, 0.10, 0.15, 0.20, 0.30, 0.50]
 KAPPA_VALUES = [0.000, 0.003, 0.010, 0.020, 0.035]
-DELTA_MAX_VALUES = [10, 40]
+DELTA_MAX_VALUES = [10, 20, 40, 100]
 
 
 def validate_benchmark() -> None:
@@ -53,9 +52,11 @@ def validate_benchmark() -> None:
 
 
 def plot_bias_heatmap(df: pd.DataFrame) -> None:
-    """Plot bias heatmap for delta_max=10 and delta_max=40."""
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-    for ax, dmax in zip(axes, DELTA_MAX_VALUES):
+    """Plot exact finite-window bias across all reported lag windows."""
+    n_cols = 2
+    n_rows = int(np.ceil(len(DELTA_MAX_VALUES) / n_cols))
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(14, 5 * n_rows), squeeze=False)
+    for ax, dmax in zip(axes.ravel(), DELTA_MAX_VALUES):
         sub = df[df["delta_max"] == dmax].copy()
         pivot = sub.pivot(index="H", columns="kappa", values="bias_exact")
         pivot.index = [f"{h:.2f}" for h in pivot.index]
@@ -78,6 +79,8 @@ def plot_bias_heatmap(df: pd.DataFrame) -> None:
                 ax.text(j, i, f"{pivot.values[i, j]:.3f}", ha="center", va="center",
                         fontsize=7, color="black")
         plt.colorbar(im, ax=ax, shrink=0.8)
+    for ax in axes.ravel()[len(DELTA_MAX_VALUES):]:
+        ax.axis("off")
 
     plt.tight_layout()
     path = os.path.join(RESULTS_DIR, "exp2_bias_heatmap.png")
@@ -162,35 +165,27 @@ def plot_log_m2(df: pd.DataFrame) -> None:
     print(f"  Saved: {path}")
 
 
-def update_results_md(df: pd.DataFrame) -> None:
-    """Append exp2 summary to results/RESULTS.md."""
-    md_path = os.path.join(RESULTS_DIR, "RESULTS.md")
+def write_summary_md(df: pd.DataFrame) -> None:
+    """Write a self-contained numerical-validation summary."""
+    md_path = os.path.join(RESULTS_DIR, "exp2_summary.md")
     bench = df[(df["H"] == 0.20) & (df["kappa"] == 0.010) & (df["delta_max"] == 10)].iloc[0]
-
-    lines = [
-        "\n## Experiment 2: Mean-Reversion Bias in H Estimation\n",
-        "### Model\n",
-        "fOU: dX_t = −κ X_t dt + ν dB_t^H\n",
-        "OLS regression: log M_2(Δ) = a + b log(Δ), H_hat = b/2\n\n",
-        "### Benchmark cell (H=0.20, κ=0.010, Δ_max=10)\n",
-        f"- H_hat (exact): {bench['H_hat_exact']:.4f}\n",
-        f"- Bias exact:    {bench['bias_exact']:+.4f}\n",
-        f"- Bias approx:   {bench['bias_approx']:+.4f}\n",
-        f"- α(Δ=1):        {bench['alpha_delta1']:.4f}\n\n",
-        "### Key Findings\n",
-        "- For κ ≤ 0.003, bias is negligible (< 0.001) at all H for Δ_max=10.\n",
-        "- For κ = 0.035, bias reaches −0.05 to −0.10 for small H (rough regime).\n",
-        "- Larger Δ_max=40 reduces bias because higher lags are less contaminated.\n",
-        "- Asymptotic formula closely tracks exact spectral result for κΔ_max ≤ 0.5.\n\n",
-        "### Files\n",
-        "- `results/exp2_bias_table.csv`: Full (H, κ, Δ_max) bias table\n",
-        "- `results/exp2_bias_heatmap.png`: Heatmap of exact bias\n",
-        "- `results/exp2_local_slope.png`: α(Δ) vs Δ curves\n",
-        "- `results/exp2_log_m2.png`: log M_2 vs log Δ with OLS fits\n",
+    rough_primary = df[
+        (df["H"] <= 0.20) & (df["kappa"] <= 0.020) & (df["delta_max"] == 10)
     ]
-    with open(md_path, "a") as f:
-        f.writelines(lines)
-    print(f"  Updated: {md_path}")
+    lines = [
+        "# Experiment 2 - exact mean-reversion contamination validation\n\n",
+        "This is the strongest direct numerical reproduction in the repository: it evaluates the paper's exact fOU second-moment integral on the reported parameter grid.\n\n",
+        "## Benchmark\n\n",
+        f"- H=0.20, kappa=0.010, delta_max=10: H_hat={bench['H_hat_exact']:.6f}, bias={bench['bias_exact']:+.6f}.\n",
+        f"- Maximum absolute lag-10 bias over H<=0.20 and kappa<=0.020: {rough_primary['bias_exact'].abs().max():.6f}.\n\n",
+        "## Interpretation\n\n",
+        "- Short-lag estimation is only weakly contaminated in the paper's rough benchmark region.\n",
+        "- Extending the fit through delta_max=20, 40, and 100 progressively increases the magnitude of the downward bias; higher lags are more, not less, affected by mean reversion.\n",
+        "- The asymptotic approximation is useful for small kappa*delta, while the exact spectral integral is the reference calculation.\n",
+    ]
+    with open(md_path, "w", encoding="utf-8") as handle:
+        handle.writelines(lines)
+    print(f"  Wrote: {md_path}")
 
 
 def main() -> None:
@@ -212,17 +207,12 @@ def main() -> None:
     print(f"\nSaved bias table → {csv_path}")
 
     # Print summary
-    print("\nBias table (delta_max=10):")
-    sub10 = df[df["delta_max"] == 10].pivot(
-        index="H", columns="kappa", values="bias_exact"
-    )
-    print(sub10.to_string(float_format=lambda x: f"{x:+.4f}"))
-
-    print("\nBias table (delta_max=40):")
-    sub40 = df[df["delta_max"] == 40].pivot(
-        index="H", columns="kappa", values="bias_exact"
-    )
-    print(sub40.to_string(float_format=lambda x: f"{x:+.4f}"))
+    for delta_max in DELTA_MAX_VALUES:
+        print(f"\nBias table (delta_max={delta_max}):")
+        table = df[df["delta_max"] == delta_max].pivot(
+            index="H", columns="kappa", values="bias_exact"
+        )
+        print(table.to_string(float_format=lambda x: f"{x:+.4f}"))
 
     # Plots
     print("\nGenerating plots …")
@@ -230,8 +220,8 @@ def main() -> None:
     plot_local_slope(df)
     plot_log_m2(df)
 
-    # RESULTS.md
-    update_results_md(df)
+    # Self-contained summary
+    write_summary_md(df)
 
     elapsed = time.time() - t0
     print(f"\n✓ Experiment 2 complete in {elapsed:.1f}s")
