@@ -147,3 +147,20 @@ def test_real_parquet_panels_match_csv_results(tmp_path, mode):
     for name in ("equities_H", "equities_corrections", "realized_implied_match"):
         pd.testing.assert_frame_equal(actual["frames"][name], expected["frames"][name],
                                       check_dtype=False, rtol=1e-9, atol=1e-10)
+
+
+@pytest.mark.parametrize("number,flag", [(6, "raw_pair_available"), (7, "corrected_pair_available")])
+def test_empty_rerender_retires_previous_comparison_plot_without_deleting(tmp_path, number, flag):
+    from src.replication.figures import render_empirical
+    frame = pd.DataFrame({"H_realized_TSRV": [.2], "H_realized_RK_corrected": [.24],
+        "H_hat_IV": [.23], "identified": [True],
+        "raw_pair_available": [True], "corrected_pair_available": [True]})
+    result = {"frames": {"realized_implied_match": frame}}
+    render_empirical(result, tmp_path)
+    image = tmp_path / f"figure{number}.png"
+    original_bytes = image.read_bytes()
+    frame[flag] = False
+    status = render_empirical(result, tmp_path)
+    assert not image.exists()
+    previous = tmp_path / status[f"figure{number}"]["previous_image"]
+    assert previous.parent == tmp_path and previous.read_bytes() == original_bytes

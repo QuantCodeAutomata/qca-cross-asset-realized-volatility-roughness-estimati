@@ -6,6 +6,7 @@ figures. Weak identification is kept visible. No data are loaded from a network.
 from __future__ import annotations
 import argparse
 from pathlib import Path
+from uuid import uuid4
 import numpy as np
 import pandas as pd
 from .common import atomic_json, private_output, sha256_file
@@ -25,6 +26,19 @@ def render_empirical(result, output_dir):
         fig.savefig(path,dpi=150)
         plt.close(fig)
         statuses[name] = {"status":"rendered_from_supplied_fixture_or_data", "sha256":sha256_file(path)}
+
+    def retire_previous_comparison(name):
+        # Keep old evidence recoverable, but never leave it at the current
+        # comparison's filename when the new run has no usable pairs.
+        path = output / (name + ".png")
+        if path.is_symlink() or (path.exists() and not path.is_file()):
+            raise ValueError("previous comparison image must be a regular file")
+        if path.exists():
+            previous = output / (name + ".previous-" + uuid4().hex + ".png")
+            if previous.exists():
+                raise FileExistsError(previous)
+            path.rename(previous)
+            statuses[name]["previous_image"] = previous.name
 
     if "figure1_moments" in frames:
         for index,(instrument,curve) in enumerate(frames["figure1_moments"].groupby("instrument_id")):
@@ -86,6 +100,7 @@ def render_empirical(result, output_dir):
             if subset.empty:
                 kind = "raw" if number == 6 else "corrected"
                 statuses[f"figure{number}"] = {"status":f"no_valid_{kind}_pairs", "n_pairs":0}
+                retire_previous_comparison(f"figure{number}")
                 continue
             fig,ax = plt.subplots(figsize=(6,5))
             for identified,group in subset.groupby("identified",dropna=False):
@@ -101,6 +116,8 @@ def render_empirical(result, output_dir):
     for number in (1,3,4,5,6,7):
         if not any(key==f"figure{number}" or key.startswith(f"figure{number}_") for key in statuses):
             statuses[f"figure{number}"] = {"status":"requires_source_or_selection"}
+            if number in (6, 7):
+                retire_previous_comparison(f"figure{number}")
     atomic_json(output/"figure_status.json",statuses)
     return statuses
 
