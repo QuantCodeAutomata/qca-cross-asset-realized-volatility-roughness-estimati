@@ -77,10 +77,11 @@ def compute_empirical_autocovariances(
 def compute_second_moment_from_series(
     log_rv_series: np.ndarray,
     delta_max: int = 10,
+    *, overlapping: bool = False,
 ) -> np.ndarray:
-    """Return the paper's non-overlapping ``m(2,Δ)`` values."""
+    """Return ``m(2,Δ)`` values (non-overlapping by default)."""
     _, m2 = compute_second_moment_scaling(
-        log_rv_series, delta_max=delta_max, overlapping=False
+        log_rv_series, delta_max=delta_max, overlapping=overlapping
     )
     return m2
 
@@ -161,13 +162,15 @@ def _corrected_h_with_diagnostics(
     return h, True, []
 
 
-def fit_two_estimator_correction(
+def _fit_two_estimator_correction(
     log_rv_a: np.ndarray,
     log_rv_b: np.ndarray,
     delta_max: int = 10,
     *,
     long_delta_max: int = 40,
     h_bounds: tuple[float, float] = (0.01, 0.49),
+    specification: str = "guarded",
+    overlapping: bool = False,
 ) -> dict:
     """Fit the paper's two-estimator additive-noise correction.
 
@@ -191,24 +194,18 @@ def fit_two_estimator_correction(
     if delta_max < 2 or long_delta_max < delta_max:
         raise ValueError("require 2 <= delta_max <= long_delta_max")
 
-    n = min(a.size, b.size)
-    if n < long_delta_max + 2:
-        long_delta_max = min(long_delta_max, max(delta_max, n - 2))
-    a = a[:n]
-    b = b[:n]
-    # Preserve the calendar grid.  Compressing out missing dates would turn
-    # multi-day gaps into artificial one-day increments and corrupt both the
-    # moment curve and the increment autocovariances.
     common_count = int(np.count_nonzero(np.isfinite(a) & np.isfinite(b)))
     if common_count < delta_max + 2:
         return _invalid_result(np.nan, np.nan, np.nan, "insufficient_data")
 
-    m2_a_long = compute_second_moment_from_series(a, long_delta_max)
-    m2_b_long = compute_second_moment_from_series(b, long_delta_max)
+    m2_a_long = compute_second_moment_from_series(a, long_delta_max, overlapping=overlapping)
+    m2_b_long = compute_second_moment_from_series(b, long_delta_max, overlapping=overlapping)
     m2_a = m2_a_long[:delta_max]
     m2_b = m2_b_long[:delta_max]
     H_raw_a = _estimate_h_from_moments(m2_a, delta_max)
     H_raw_b = _estimate_h_from_moments(m2_b, delta_max)
+    if not np.isfinite(H_raw_a) and not np.isfinite(H_raw_b):
+        return _invalid_result(H_raw_a, H_raw_b, np.nan, "insufficient_positive_moments")
 
     gap_valid = np.isfinite(m2_a) & np.isfinite(m2_b)
     if not np.any(gap_valid):
@@ -221,22 +218,20 @@ def fit_two_estimator_correction(
     if not np.all(np.isfinite(emp_a)) or not np.all(np.isfinite(emp_b)):
         return _invalid_result(H_raw_a, H_raw_b, delta_m, "invalid_autocovariances")
 
-    # Feasibility for subtracting 2*omega² from every moment used in either
-    # refit.  A small margin keeps log moments away from numerical zero.
-    margin = 1.0 - 1e-8
-    max_oa2 = 0.5 * float(np.nanmin(m2_a_long)) * margin
-    max_ob2 = 0.5 * float(np.nanmin(m2_b_long)) * margin
-    if not np.isfinite(max_oa2) or not np.isfinite(max_ob2):
-        return _invalid_result(H_raw_a, H_raw_b, delta_m, "invalid_moments")
-
-    if difference >= 0.0:
-        base_upper = min(max_ob2, max_oa2 - difference)
-    else:
-        base_upper = min(max_oa2, max_ob2 + difference)
-    if base_upper <= 0.0:
-        return _invalid_result(
-            H_raw_a, H_raw_b, delta_m, "infeasible_noise_variance_constraint"
-        )
+    # The paper objective has only a nonnegative noise-variance constraint.
+    # The guarded compatibility specification adds long-window feasibility.
+    base_upper = None
+    if specification == "guarded":
+        margin = 1.0 - 1e-8
+        max_oa2 = 0.5 * float(np.nanmin(m2_a_long)) * margin
+        max_ob2 = 0.5 * float(np.nanmin(m2_b_long)) * margin
+        if not np.isfinite(max_oa2) or not np.isfinite(max_ob2):
+            return _invalid_result(H_raw_a, H_raw_b, delta_m, "invalid_moments")
+        base_upper = (min(max_ob2, max_oa2 - difference) if difference >= 0
+                      else min(max_oa2, max_ob2 + difference))
+        if base_upper <= 0:
+            return _invalid_result(H_raw_a, H_raw_b, delta_m,
+                                   "infeasible_noise_variance_constraint")
 
     h_lo, h_hi = h_bounds
     if not (0.0 < h_lo < h_hi < 1.0):
@@ -260,9 +255,8 @@ def fit_two_estimator_correction(
         np.clip(np.array([raw_center, 0.08, 0.15, 0.25, 0.35]), h_lo, h_hi)
     )
     nu_guess = np.sqrt(max(0.5 * (emp_a[0] + emp_b[0]), 1e-8))
-    base_starts = np.unique(
-        np.clip(np.array([0.0, 0.1, 0.4, 0.8]) * base_upper, 0.0, base_upper)
-    )
+    base_start_scale = base_upper if base_upper is not None else scale / 2.0
+    base_starts = np.array([0.0, 0.1, 0.4, 0.8]) * base_start_scale
     bounds = [(h_lo, h_hi), (np.log(1e-6), np.log(100.0)), (0.0, base_upper)]
 
     best = None
@@ -329,6 +323,91 @@ def fit_two_estimator_correction(
         "invalid_lags_b_10": invalid_b10,
         "invalid_lags_a_40": invalid_a40,
         "invalid_lags_b_40": invalid_b40,
+        "optimizer_success": bool(best.success),
+        "optimizer_message": str(best.message),
+        "h_at_lower_bound": bool(np.isclose(H_nu, h_lo, atol=1e-7, rtol=0)),
+        "h_at_upper_bound": bool(np.isclose(H_nu, h_hi, atol=1e-7, rtol=0)),
+        "noise_at_lower_bound": bool(base_fit <= 1e-9 * max(scale, 1.0)),
+        "noise_at_upper_bound": bool(base_upper is not None and
+                                      np.isclose(base_fit, base_upper, atol=1e-9, rtol=1e-7)),
+        "nu_at_lower_bound": bool(np.isclose(nu_fit, 1e-6, atol=1e-10, rtol=1e-7)),
+        "nu_at_upper_bound": bool(np.isclose(nu_fit, 100.0, atol=1e-7, rtol=1e-7)),
+        "objective_scale": scale,
+        "objective_unscaled": float(best.fun * scale**2),
+        "empirical_autocovariances_a": emp_a.tolist(),
+        "empirical_autocovariances_b": emp_b.tolist(),
         "objective": float(best.fun),
         "convergence_status": status,
     }
+
+
+def fit_two_estimator_correction(
+    log_rv_a: np.ndarray,
+    log_rv_b: np.ndarray,
+    delta_max: int = 10,
+    *,
+    long_delta_max: int = 40,
+    h_bounds: tuple[float, float] = (0.01, 0.49),
+    specification: str = "guarded",
+    overlapping: bool = False,
+) -> dict:
+    """Joint correction on common observations without compressing the calendar.
+
+    ``paper`` implements the nonnegative-variance constraint of equation (3),
+    without imposing moment-positivity bounds on its optimization. Invalid
+    refits remain visible. ``guarded`` preserves the original long-window
+    feasibility constraint. In paper mode the short fit is independent of the
+    requested long diagnostic window. Bounds on H and nu are explicit numerical
+    conventions (the paper runners pass H lower=1e-6).
+    """
+    a, b = (np.asarray(x, dtype=float) for x in (log_rv_a, log_rv_b))
+    if a.ndim != 1 or b.ndim != 1 or a.shape != b.shape:
+        raise ValueError("input series must be one-dimensional with equal lengths")
+    if specification not in ("paper", "guarded"):
+        raise ValueError("specification must be paper or guarded")
+    if not 2 <= delta_max <= long_delta_max:
+        raise ValueError("require 2 <= delta_max <= long_delta_max")
+    if not 0 < h_bounds[0] < h_bounds[1] < 1:
+        raise ValueError("h_bounds must lie inside (0,1)")
+    common = np.isfinite(a) & np.isfinite(b)
+    a, b = np.where(common, a, np.nan), np.where(common, b, np.nan)
+    requested_long_delta_max = long_delta_max
+    if specification == "guarded" and len(a) < long_delta_max + 2:
+        # Preserve the original short-series compatibility window.
+        long_delta_max = min(long_delta_max, max(delta_max, len(a) - 2))
+    result = _fit_two_estimator_correction(a, b, delta_max,
+        long_delta_max=long_delta_max, h_bounds=h_bounds,
+        specification=specification, overlapping=overlapping)
+    result.update(specification=specification, overlapping=bool(overlapping),
+                  delta_max=int(delta_max), long_delta_max=int(long_delta_max),
+                  requested_long_delta_max=int(requested_long_delta_max),
+                  h_bounds=list(h_bounds), n_calendar_rows=len(a),
+                  n_common_observations=int(common.sum()))
+    result.setdefault("optimizer_success", False)
+    result.setdefault("optimizer_message", result["convergence_status"])
+    for key in ("h_at_lower_bound", "h_at_upper_bound", "noise_at_lower_bound", "noise_at_upper_bound", "nu_at_lower_bound", "nu_at_upper_bound"):
+        result.setdefault(key, False)
+    counts = []
+    for d in range(1, long_delta_max + 1):
+        starts = np.arange(0, max(0, len(a) - d), 1 if overlapping else d)
+        counts.append(int(np.sum(common[starts] & common[starts + d])))
+    result["moment_pair_counts"] = counts
+    for label, x in (("a", a), ("b", b)):
+        moments = compute_second_moment_from_series(x, long_delta_max, overlapping=overlapping)
+        corrected = moments - 2 * result["omega_" + label + "2"]
+        result["moments_" + label] = moments.tolist()
+        result["corrected_moments_" + label] = corrected.tolist()
+        for window, end in (("short", delta_max), ("long", long_delta_max)):
+            curve = corrected[:end]
+            valid = np.all(np.isfinite(curve) & (curve > 0))
+            r2, unconstrained_h = np.nan, np.nan
+            reason = "nonpositive_or_missing_moments"
+            if valid:
+                fit = sm.OLS(np.log(curve), sm.add_constant(np.log(np.arange(1, end+1)))).fit()
+                r2 = float(fit.rsquared)
+                unconstrained_h = float(fit.params[1]) / 2
+                reason = "ok" if 0 < float(fit.params[1])/2 < 1 else "H_outside_unit_interval"
+            result[f"unconstrained_corrected_H_{label}_{window}"] = unconstrained_h
+            result[f"corrected_r_squared_{label}_{window}"] = r2
+            result[f"refit_status_{label}_{window}"] = reason
+    return result

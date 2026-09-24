@@ -13,6 +13,27 @@ from typing import Optional, Tuple
 # Internal helpers
 # ---------------------------------------------------------------------------
 
+class PricingError(ValueError):
+    """Unsupported inputs or a price for which no admissible IV was found."""
+
+
+class UnsupportedPricingDomain(PricingError):
+    """An explicitly unsupported model domain."""
+
+
+class BoundarySolveError(PricingError):
+    """The numerical BAW exercise-boundary calculation failed."""
+
+
+def _validate(S, K, T, r, sigma, option_type, q=0.0):
+    if option_type not in ("call", "put"):
+        raise PricingError("option_type must be call or put")
+    if not np.all(np.isfinite([S, K, T, r, q, sigma])):
+        raise PricingError("non_finite_pricing_input")
+    if S <= 0 or K <= 0 or T < 0 or sigma < 0:
+        raise PricingError("require positive underlying/strike and nonnegative maturity/volatility")
+
+
 def _gbs_d1d2(S: float, K: float, T: float, r: float, q: float,
                sigma: float) -> Tuple[float, float]:
     """d1, d2 for generalized Black-Scholes (continuous dividend yield q)."""
@@ -59,6 +80,10 @@ def black76_price(F: float, K: float, T: float, r: float, sigma: float,
     Returns:
         Option price.
     """
+    _validate(F, K, T, r, sigma, option_type)
+    if sigma == 0.0:
+        intrinsic = max(F - K, 0.0) if option_type == 'call' else max(K - F, 0.0)
+        return float(np.exp(-r * T) * intrinsic)
     if T <= 0.0:
         if option_type == 'call':
             return max(F - K, 0.0)
@@ -75,8 +100,29 @@ def black76_price(F: float, K: float, T: float, r: float, sigma: float,
     return disc * (K * norm.cdf(-d2) - F * norm.cdf(-d1))
 
 
+def _invert(price, pricer, lower_bound, upper_bound):
+    if not np.isfinite(price) or price <= 0:
+        raise PricingError("nonpositive_or_nonfinite_option_price")
+    if price < lower_bound - 1e-10 or price >= upper_bound:
+        raise PricingError("option_price_outside_model_bounds")
+    try:
+        lo, hi = 1e-6, 1.0
+        f_lo = pricer(lo) - price
+        f_hi = pricer(hi) - price
+        while f_hi < 0 and hi < 10:
+            hi = min(10.0, hi * 2)
+            f_hi = pricer(hi) - price
+        if f_lo >= 0 or f_hi < 0:
+            raise PricingError("implied_volatility_not_bracketed")
+        return float(brentq(lambda v: pricer(v) - price, lo, hi, xtol=1e-10, maxiter=300))
+    except PricingError:
+        raise
+    except (ValueError, RuntimeError, OverflowError) as exc:
+        raise PricingError("implied_volatility_solver_failed") from exc
+
+
 def black76_implied_vol(price: float, F: float, K: float, T: float, r: float,
-                         option_type: str = 'call') -> Optional[float]:
+                         option_type: str = 'call', *, raise_errors: bool = False) -> Optional[float]:
     """Compute implied volatility from a Black-76 option price using Brent's method.
 
     Args:
@@ -88,28 +134,20 @@ def black76_implied_vol(price: float, F: float, K: float, T: float, r: float,
         option_type: ``'call'`` or ``'put'``.
 
     Returns:
-        Implied volatility, or ``None`` if no solution is found.
+        Implied volatility, or ``None`` if no solution is found. Set
+        ``raise_errors=True`` to retain an explicit rejection reason.
     """
-    if T <= 0.0 or price <= 0.0:
-        return None
-
-    def objective(sigma: float) -> float:
-        return black76_price(F, K, T, r, sigma, option_type) - price
-
-    # Intrinsic value check
-    disc = np.exp(-r * T)
-    if option_type == 'call':
-        intrinsic = disc * max(F - K, 0.0)
-    else:
-        intrinsic = disc * max(K - F, 0.0)
-
-    if price < intrinsic - 1e-8:
-        return None
-
     try:
-        iv = brentq(objective, 1e-6, 10.0, xtol=1e-10, maxiter=500)
-        return float(iv)
-    except (ValueError, RuntimeError):
+        _validate(F, K, T, r, 1.0, option_type)
+        if T <= 0:
+            raise PricingError("expired_option")
+        disc = np.exp(-r * T)
+        intrinsic = disc * (max(F - K, 0.0) if option_type == "call" else max(K - F, 0.0))
+        return _invert(price, lambda v: black76_price(F, K, T, r, v, option_type),
+                       intrinsic, disc * (F if option_type == "call" else K))
+    except PricingError:
+        if raise_errors:
+            raise
         return None
 
 
@@ -117,46 +155,69 @@ def black76_implied_vol(price: float, F: float, K: float, T: float, r: float,
 # Barone-Adesi-Whaley (American options)
 # ---------------------------------------------------------------------------
 
+def _baw_roots(T, r, q, sigma):
+    """Stable roots of Q² + (N-1)Q - M/h = 0, including the r=0 limit."""
+    z = r * T
+    ratio = 1.0 + z / 2.0 + z * z / 12.0 if abs(z) < 1e-7 else z / -np.expm1(-z)
+    b = 2.0 * ratio / (sigma * sigma * T)
+    a = 2.0 * (r - q) / (sigma * sigma) - 1.0
+    root = np.hypot(a, 2.0 * np.sqrt(b))
+    if a >= 0:
+        return -0.5 * (a + root), 2.0 * b / (root + a)
+    return -2.0 * b / (root - a), 0.5 * (root - a)
+
+
+def _solve_log_boundary(equation, option_type):
+    """Bracket in log(S*/K). Infinite boundaries must be handled analytically."""
+    try:
+        zero = float(equation(0.0))
+        if not np.isfinite(zero):
+            raise BoundarySolveError("non_finite_boundary_residual")
+        # The ATM continuation premium gives a negative residual on both sides.
+        if zero >= 0:
+            raise BoundarySolveError("invalid_boundary_at_the_money")
+        direction = 1 if option_type == "call" else -1
+        endpoint = direction * np.log(2.0)
+        for _ in range(10):
+            value = float(equation(endpoint))
+            if not np.isfinite(value):
+                raise BoundarySolveError("non_finite_boundary_residual")
+            if value > 0:
+                lo, hi = sorted([0.0, endpoint])
+                answer = brentq(equation, lo, hi, xtol=1e-12, rtol=1e-12, maxiter=300)
+                if not np.isfinite(answer):
+                    raise BoundarySolveError("non_finite_boundary_solution")
+                return float(answer)
+            endpoint *= 2
+        raise BoundarySolveError("exercise_boundary_not_bracketed")
+    except BoundarySolveError:
+        raise
+    except (ValueError, RuntimeError, OverflowError, FloatingPointError) as exc:
+        raise BoundarySolveError("exercise_boundary_solver_failed") from exc
+
+
 def _baw_critical_call(K: float, T: float, r: float, q: float,
                         sigma: float, q2: float) -> float:
     """Bisect for the critical call exercise price S* > K."""
-    def equation(s: float) -> float:
-        d1_s, _ = _gbs_d1d2(s, K, T, r, q, sigma)
-        bs = _gbs_call(s, K, T, r, q, sigma)
-        alpha = (s / q2) * (1.0 - np.exp(-q * T) * norm.cdf(d1_s))
-        return (s - K) - bs - alpha
-
-    lo, hi = K * (1.0 + 1e-6), K * 1e4
-    # Ensure sign change; if equation(hi) < 0, no early exercise
-    try:
-        if equation(lo) >= 0.0:
-            return lo
-        if equation(hi) <= 0.0:
-            return hi * 1e4  # effectively ∞ → no early exercise
-        return brentq(equation, lo, hi, xtol=1e-8, maxiter=500)
-    except (ValueError, RuntimeError):
-        return hi * 1e4
+    def equation(y):
+        d1 = (y + (r - q + sigma * sigma / 2) * T) / (sigma * np.sqrt(T))
+        d2 = d1 - sigma * np.sqrt(T)
+        a = -np.expm1(-q * T) + np.exp(-q * T) * norm.sf(d1)
+        b = -np.expm1(-r * T) + np.exp(-r * T) * norm.sf(d2)
+        return (1 - 1 / q2) * a - np.exp(-y) * b
+    return float(K * np.exp(_solve_log_boundary(equation, "call")))
 
 
 def _baw_critical_put(K: float, T: float, r: float, q: float,
                        sigma: float, q1: float) -> float:
     """Bisect for the critical put exercise price S** ∈ (0, K)."""
-    def equation(s: float) -> float:
-        d1_s, _ = _gbs_d1d2(s, K, T, r, q, sigma)
-        bs = _gbs_put(s, K, T, r, q, sigma)
-        # q1 < 0  →  -s/q1 > 0
-        alpha = -(s / q1) * (1.0 - np.exp(-q * T) * norm.cdf(-d1_s))
-        return (K - s) - bs - alpha
-
-    lo, hi = K * 1e-6, K * (1.0 - 1e-7)
-    try:
-        if equation(lo) <= 0.0:
-            return lo
-        if equation(hi) >= 0.0:
-            return 0.0  # no early exercise
-        return brentq(equation, lo, hi, xtol=1e-8, maxiter=500)
-    except (ValueError, RuntimeError):
-        return 0.0
+    def equation(y):
+        d1 = (y + (r - q + sigma * sigma / 2) * T) / (sigma * np.sqrt(T))
+        d2 = d1 - sigma * np.sqrt(T)
+        a = -np.expm1(-r * T) + np.exp(-r * T) * norm.cdf(d2)
+        b = -np.expm1(-q * T) + np.exp(-q * T) * norm.cdf(d1)
+        return a - np.exp(y) * (1 - 1 / q1) * b
+    return float(K * np.exp(_solve_log_boundary(equation, "put")))
 
 
 def baw_approximation(S: float, K: float, T: float, r: float, q: float,
@@ -178,47 +239,46 @@ def baw_approximation(S: float, K: float, T: float, r: float, q: float,
     Returns:
         American option price approximation.
     """
-    if T <= 0.0:
-        if option_type == 'call':
-            return max(S - K, 0.0)
-        return max(K - S, 0.0)
-
-    # Quadratic equation parameters
-    M = 2.0 * r / sigma ** 2
-    N_ = 2.0 * (r - q) / sigma ** 2
-    h = 1.0 - np.exp(-r * T)
-    discriminant = (N_ - 1.0) ** 2 + 4.0 * M / h
-
-    if option_type == 'call':
-        if q == 0.0:
-            # No early exercise for calls with no dividends
-            return _gbs_call(S, K, T, r, q, sigma)
-
-        q2 = (-(N_ - 1.0) + np.sqrt(discriminant)) / 2.0
-        s_star = _baw_critical_call(K, T, r, q, sigma, q2)
-
-        if S >= s_star:
-            return S - K  # immediate exercise is optimal
-
-        d1_star, _ = _gbs_d1d2(s_star, K, T, r, q, sigma)
-        A2 = (s_star / q2) * (1.0 - np.exp(-q * T) * norm.cdf(d1_star))
-        return _gbs_call(S, K, T, r, q, sigma) + A2 * (S / s_star) ** q2
-
-    else:  # put
-        q1 = (-(N_ - 1.0) - np.sqrt(discriminant)) / 2.0  # q1 < 0
-        s_star = _baw_critical_put(K, T, r, q, sigma, q1)
-
-        if s_star <= 0.0 or S <= s_star:
-            return max(K - S, 0.0)
-
-        d1_star, _ = _gbs_d1d2(s_star, K, T, r, q, sigma)
-        # A1 > 0: q1 < 0 → -s_star/q1 > 0
-        A1 = -(s_star / q1) * (1.0 - np.exp(-q * T) * norm.cdf(-d1_star))
-        return _gbs_put(S, K, T, r, q, sigma) + A1 * (S / s_star) ** q1
+    _validate(S, K, T, r, sigma, option_type, q)
+    if r < 0:
+        raise UnsupportedPricingDomain("BAW_negative_rates_unsupported")
+    intrinsic = max(S - K, 0.0) if option_type == "call" else max(K - S, 0.0)
+    if T == 0:
+        return intrinsic
+    if sigma == 0:
+        raise UnsupportedPricingDomain("BAW_requires_positive_volatility")
+    european = (_gbs_call if option_type == "call" else _gbs_put)(S, K, T, r, q, sigma)
+    if (option_type == "call" and q <= 0) or (option_type == "put" and r == 0 and q >= 0):
+        return european
+    q1, q2 = _baw_roots(T, r, q, sigma)
+    if option_type == "call":
+        star = _baw_critical_call(K, T, r, q, sigma, q2)
+        if not np.isfinite(star) or star <= K:
+            raise BoundarySolveError("invalid_call_exercise_boundary")
+        if S >= star:
+            value = intrinsic
+        else:
+            d1, _ = _gbs_d1d2(star, K, T, r, q, sigma)
+            premium = (star / q2) * (-np.expm1(-q * T) + np.exp(-q * T) * norm.sf(d1))
+            value = european + premium * np.exp(q2 * np.log(S / star))
+    else:
+        star = _baw_critical_put(K, T, r, q, sigma, q1)
+        if not np.isfinite(star) or not 0 < star < K:
+            raise BoundarySolveError("invalid_put_exercise_boundary")
+        if S <= star:
+            value = intrinsic
+        else:
+            d1, _ = _gbs_d1d2(star, K, T, r, q, sigma)
+            premium = -(star / q1) * (-np.expm1(-q * T) + np.exp(-q * T) * norm.cdf(d1))
+            value = european + premium * np.exp(q1 * np.log(S / star))
+    tolerance = 1e-10 * max(S, K, 1.0)
+    if not np.isfinite(value) or value < max(european, intrinsic) - tolerance:
+        raise BoundarySolveError("BAW_price_violates_lower_bound")
+    return float(value)
 
 
 def baw_implied_vol(price: float, S: float, K: float, T: float, r: float,
-                    q: float, option_type: str = 'call') -> Optional[float]:
+                    q: float, option_type: str = 'call', *, raise_errors: bool = False) -> Optional[float]:
     """Compute implied volatility from a BAW option price using Brent's method.
 
     Args:
@@ -231,27 +291,21 @@ def baw_implied_vol(price: float, S: float, K: float, T: float, r: float,
         option_type: ``'call'`` or ``'put'``.
 
     Returns:
-        Implied volatility, or ``None`` if no solution is found.
+        Implied volatility, or ``None`` if no solution is found. Set
+        ``raise_errors=True`` to retain an explicit rejection reason.
     """
-    if T <= 0.0 or price <= 0.0:
-        return None
-
-    def objective(sigma: float) -> float:
-        return baw_approximation(S, K, T, r, q, sigma, option_type) - price
-
-    # Intrinsic-value bounds
-    if option_type == 'call':
-        intrinsic = max(S - K, 0.0)
-    else:
-        intrinsic = max(K - S, 0.0)
-
-    if price < intrinsic - 1e-8:
-        return None
-
     try:
-        iv = brentq(objective, 1e-6, 10.0, xtol=1e-10, maxiter=500)
-        return float(iv)
-    except (ValueError, RuntimeError):
+        _validate(S, K, T, r, 1.0, option_type, q)
+        if r < 0:
+            raise UnsupportedPricingDomain("BAW_negative_rates_unsupported")
+        if T <= 0:
+            raise PricingError("expired_option")
+        intrinsic = max(S - K, 0.0) if option_type == "call" else max(K - S, 0.0)
+        upper = S * max(1.0, np.exp(-q * T)) if option_type == "call" else K
+        return _invert(price, lambda v: baw_approximation(S, K, T, r, q, v, option_type), intrinsic, upper)
+    except PricingError:
+        if raise_errors:
+            raise
         return None
 
 
@@ -270,7 +324,7 @@ def infer_forward_and_discount_pcp(calls: np.ndarray, puts: np.ndarray,
         (C − P) = D · F − D · K
 
     Fit by OLS to get slope (= −D) and intercept (= D · F), then:
-        D = −slope  (clamped to (0, 1])
+        D = −slope  (must be positive; D > 1 is supported)
         F = intercept / D
 
     Args:
@@ -281,19 +335,59 @@ def infer_forward_and_discount_pcp(calls: np.ndarray, puts: np.ndarray,
     Returns:
         ``(F_estimate, D_estimate)`` tuple.
     """
-    calls = np.asarray(calls, dtype=np.float64)
-    puts = np.asarray(puts, dtype=np.float64)
-    strikes = np.asarray(strikes, dtype=np.float64)
+    result = fit_put_call_parity(calls, puts, strikes)
+    return result["forward"], result["discount"]
 
-    cp_diff = calls - puts   # D*(F-K) = D*F - D*K
 
-    # OLS: cp_diff = a - b*K  →  a = D*F, b = D
-    A = np.column_stack([np.ones(len(strikes)), -strikes])
-    coeff, _, _, _ = np.linalg.lstsq(A, cp_diff, rcond=None)
-    DF = float(coeff[0])   # D * F
-    D = float(coeff[1])    # D
+def fit_put_call_parity(calls, puts, strikes, *, known_forward: Optional[float] = None) -> dict:
+    """OLS parity with rank checks, no rate clipping and explicit diagnostics.
 
-    D = np.clip(D, 1e-6, 1.0)
-    F = DF / D
-
-    return float(F), float(D)
+    CME: C-P = D(F-K), with supplied F and no intercept.
+    OPRA: C-P = DF-DK. On American prices this is an approximation, not an identity.
+    """
+    c, p, k = (np.asarray(x, dtype=float) for x in (calls, puts, strikes))
+    if c.ndim != 1 or p.shape != c.shape or k.shape != c.shape:
+        raise PricingError("parity_array_shape_mismatch")
+    if not np.all(np.isfinite(np.r_[c, p, k])) or np.any(k <= 0) or np.any(c < 0) or np.any(p < 0):
+        raise PricingError("invalid_parity_inputs")
+    if len(k) < 2 or len(np.unique(k)) < 2:
+        raise PricingError("parity_requires_two_distinct_strikes")
+    y = c - p
+    if known_forward is not None:
+        if not np.isfinite(known_forward) or known_forward <= 0:
+            raise PricingError("invalid_known_forward")
+        design = (known_forward - k)[:, None]
+        mode = "known_forward_no_intercept"
+    else:
+        center, scale = float(k.mean()), float(np.ptp(k))
+        design = np.column_stack([np.ones(len(k)), (k - center) / scale])
+        mode = "joint_forward_discount"
+    coef, _, rank, singular = np.linalg.lstsq(design, y, rcond=None)
+    if rank != design.shape[1]:
+        raise PricingError("rank_deficient_parity_regression")
+    residual = y - design @ coef
+    dof = len(k) - rank
+    mse = float(residual @ residual / dof) if dof > 0 else np.nan
+    cov = mse * np.linalg.inv(design.T @ design)
+    if known_forward is not None:
+        D, F = float(coef[0]), float(known_forward)
+        d_se, f_se = float(np.sqrt(max(cov[0, 0], 0))), 0.0
+        ss_tot = float(y @ y)
+        r2_kind = "uncentered"
+    else:
+        D = float(-coef[1] / scale)
+        if not np.isfinite(D) or D <= 0:
+            raise PricingError("nonpositive_or_nonfinite_discount")
+        F = float(center + coef[0] / D)
+        d_se = float(np.sqrt(max(cov[1, 1], 0)) / scale)
+        grad = np.array([1 / D, coef[0] / (scale * D * D)])
+        f_se = float(np.sqrt(max(grad @ cov @ grad, 0)))
+        ss_tot = float(np.sum((y - y.mean())**2))
+        r2_kind = "centered"
+    if not np.isfinite(D) or D <= 0 or not np.isfinite(F) or F <= 0:
+        raise PricingError("nonpositive_or_nonfinite_forward_or_discount")
+    return {"forward": F, "discount": D, "forward_se": f_se, "discount_se": d_se,
+            "r_squared": 1 - float(residual @ residual) / ss_tot if ss_tot > 0 else np.nan,
+            "r_squared_kind": r2_kind, "rmse": float(np.sqrt(np.mean(residual**2))),
+            "rank": int(rank), "n_pairs": len(k), "n_unique_strikes": len(np.unique(k)),
+            "condition_number": float(singular[0] / singular[-1]), "mode": mode}

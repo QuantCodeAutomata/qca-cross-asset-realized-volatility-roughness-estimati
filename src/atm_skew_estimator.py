@@ -52,7 +52,7 @@ def estimate_atm_skew(strikes: np.ndarray, ivols: np.ndarray, forward: float,
     k = compute_log_moneyness(strikes, forward)
     mask = (np.abs(k) <= moneyness_band) & np.isfinite(ivols) & (ivols > 0.0)
 
-    if mask.sum() < min_strikes:
+    if len(np.unique(strikes[mask])) < min_strikes:
         return None
 
     k_sel = k[mask]
@@ -64,10 +64,13 @@ def estimate_atm_skew(strikes: np.ndarray, ivols: np.ndarray, forward: float,
     atm_iv = float(res.params[0])      # intercept = IV at k=0
     psi = float(res.params[1])         # slope = dIV/dk|_{k=0}
     r_squared = float(res.rsquared)
-    n_strikes = int(mask.sum())
+    n_strikes = int(len(np.unique(strikes[mask])))
 
     return {
         'psi': psi,
+        'psi_se': float(res.bse[1]),
+        'atm_iv_se': float(res.bse[0]),
+        'n_quotes': int(mask.sum()),
         'atm_iv': atm_iv,
         'r_squared': r_squared,
         'n_strikes': n_strikes,
