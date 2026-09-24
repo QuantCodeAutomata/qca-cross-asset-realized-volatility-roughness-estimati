@@ -1,0 +1,3 @@
+-r requirements.txt
+# Optional local Parquet I/O. Not installed/downloaded during this audit.
+pyarrow
