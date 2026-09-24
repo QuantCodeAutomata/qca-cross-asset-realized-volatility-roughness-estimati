@@ -189,3 +189,36 @@ A full empirical replication still requires, among other things:
 Until those panels are supplied and run through the audited functions, the
 correct label is **audited validation harness with a single-instrument
 real-data pilot**, not **full empirical replication**.
+
+## Additive replication extension — September 24, 2026
+
+`src/replication` adds a price-to-implied-H pipeline, a Gaussian fOU/fBm
+generator, complete Table 3–6 scenario designs, and private CSV/Parquet panel
+adapters. Existing `exp/` commands, result files and the historical
+`AUDIT_REPORT.md` remain unchanged. The core correction still defaults to
+`guarded`; the new runners explicitly select the documented `paper` mode.
+
+See the [implementation guide](docs/REPLICATION_GUIDE.md) for input contracts,
+filtering, calibration and known conventions, and the
+[dated integration report](docs/AUDIT_REPORT_2026-09-24.md) for tests and limits.
+These additions do not certify the paper's empirical results. In particular,
+the historical Exp. 2 summary above is not a full Table 2 match: 14 of 48
+printed cells disagree with independently checked integrals; the original
+spectral integrator is retained.
+
+## Local extension checks (no market access)
+
+```bash
+python -m pytest -q
+python -m src.replication.monte_carlo --profile paper --dry-run
+python -m src.replication.monte_carlo --profile smoke --output-dir .local/mc_smoke
+python -m src.replication.monte_carlo --profile smoke --output-dir .local/mc_smoke --resume
+python -m tests.run_file_smoke --output-dir .local/file_smoke
+python -m src.replication.table2 --output-dir .local/table2_check
+```
+
+Parquet support is optional: see `requirements-replication.txt`. Detailed inputs
+and outputs belong outside Git or in ignored `.local`. The paper dry-run only
+lists the design; the smoke run is a small synthetic check, not a replication
+of published Monte Carlo averages. Use a fresh output directory after code or
+configuration changes; resume deliberately rejects mismatched fingerprints.

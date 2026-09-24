@@ -1,0 +1,28 @@
+{
+  "cells": 48,
+  "match_published_four_decimal_rounding": 34,
+  "max_absolute_difference": 0.004942396639087507,
+  "independent_integral_checks": [
+    {
+      "kappa": 0.003,
+      "max_m2_relative_difference": 1.0651479698253752e-12,
+      "H_hat_100_independent": 0.19459670789202063
+    },
+    {
+      "kappa": 0.01,
+      "max_m2_relative_difference": 1.0895728763671286e-12,
+      "H_hat_100_independent": 0.1744680767436223
+    },
+    {
+      "kappa": 0.02,
+      "max_m2_relative_difference": 1.134869975771835e-12,
+      "H_hat_100_independent": 0.14579893181015946
+    },
+    {
+      "kappa": 0.035,
+      "max_m2_relative_difference": 1.2103651414463457e-12,
+      "H_hat_100_independent": 0.11174239663909019
+    }
+  ],
+  "interpretation": "A printed-table discrepancy is not automatically a code defect. Compare independent integrals before changing the implementation."
+}

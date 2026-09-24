@@ -62,3 +62,10 @@ htmlcov/
 
 # macOS
 .DS_Store
+
+# Replication private inputs and per-run products
+private/
+replication_private/
+**/covariance_cache/
+**/private_manifest.json
+**/mc_paths/

@@ -1,0 +1,496 @@
+{
+  "date": "2026-09-24",
+  "base_commit": "537ae369776c3a4bbdd8bc91de1c43baeb53e594",
+  "validated_code_commit": "86d3fe02e4b98bfb71f5a8c25b41265d5a748563",
+  "delivery_archive_sha256": "4a3d2e3d81c0db8055fc5bfd3a4645371e42db756cf87b694121b1855d1c6a19",
+  "archive_checksums_verified": 36,
+  "base_blob_hashes_verified": 64,
+  "environment": {
+    "python": "3.12.10",
+    "numpy": "2.3.5",
+    "scipy": "1.16.3",
+    "pandas": "2.3.3",
+    "statsmodels": "0.14.6",
+    "pytest": "9.0.1",
+    "pyarrow": "23.0.1",
+    "matplotlib": "3.10.7"
+  },
+  "tests": {
+    "baseline_passed": 91,
+    "archive_additional_passed": 153,
+    "integration_regressions_passed": 16,
+    "final": {
+      "tests": "260",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "32.392"
+    },
+    "pytest_xml_sha256": "e42769b2f71e6369ec8d5389845bb5a818380e726415a423cd89693a17685ca4"
+  },
+  "compatibility": {
+    "public_functions_checked": 34,
+    "previous_parameter_names_kinds_defaults_preserved": true,
+    "guarded_complete_calendar_baseline_lengths": [
+      30,
+      100,
+      500
+    ],
+    "short_guarded_effective_window_preserved": true,
+    "legacy_checks": [
+      {
+        "command": "python exp/exp1_realized_hurst.py --n-per-class 1 --n-days 96 --n-bars 390 --no-plots",
+        "exit_code": 0
+      },
+      {
+        "command": "python exp/exp2_mean_reversion.py",
+        "exit_code": 0
+      },
+      {
+        "command": "python exp/exp3_measurement_error.py --n-paths 1 --n-days 96 --n-bars 390 --no-plots",
+        "exit_code": 0
+      },
+      {
+        "command": "python exp/exp4_implied_hurst.py --n-dates 20 --no-plots",
+        "exit_code": 0
+      },
+      {
+        "command": "python exp/exp5_spy_empirical.py --help",
+        "exit_code": 0
+      }
+    ],
+    "legacy_execution": "separate temporary snapshot of code commit 4bfc12f; no historical output overwritten",
+    "compileall_passed": true
+  },
+  "preservation": {
+    "baseline_files": 64,
+    "modified_baseline_files": [
+      ".gitignore",
+      "README.md",
+      "src/atm_skew_estimator.py",
+      "src/autocovariance_fit.py",
+      "src/option_pricing.py"
+    ],
+    "readme_append_only": true,
+    "original_results_files_unchanged": 27,
+    "historical_audit_sha256": "78a32a4aa3591d62078bc2454cb1e11c4bb64d549fb85482e0ee90462e818137",
+    "unchanged_fou_integrator_sha256": "f7fd233d738d4006f2392c9f0d17a8d9dd496cca77652a510efd3efdee05e4b5",
+    "no_renames_moves_or_deletions": true
+  },
+  "paper_design": {
+    "executed": false,
+    "configuration": {
+      "profile": "paper",
+      "seed": 20260924,
+      "generator": "gaussian",
+      "overlapping": false,
+      "specification": "paper",
+      "calibration_horizon": 2520
+    },
+    "n_days": 2520,
+    "n_bars": 390,
+    "n_scenarios": 51,
+    "n_paths": 40200,
+    "H_values": [
+      0.05,
+      0.1,
+      0.15,
+      0.2,
+      0.3,
+      0.5
+    ],
+    "kappa_values": [
+      0,
+      0.003,
+      0.01,
+      0.02,
+      0.035
+    ],
+    "tables": [
+      {
+        "table": 3,
+        "scenarios": 30,
+        "paths": 30000,
+        "estimators": [
+          "rv5m"
+        ],
+        "pairings": []
+      },
+      {
+        "table": 4,
+        "scenarios": 2,
+        "paths": 2000,
+        "estimators": [
+          "rv5m",
+          "rk",
+          "tsrv",
+          "pav",
+          "pabpv",
+          "bpv",
+          "ctrv"
+        ],
+        "pairings": []
+      },
+      {
+        "table": 5,
+        "scenarios": 1,
+        "paths": 1000,
+        "estimators": [
+          "rv5m",
+          "rk",
+          "tsrv",
+          "pav",
+          "pabpv",
+          "bpv",
+          "ctrv"
+        ],
+        "pairings": [
+          "rk",
+          "tsrv",
+          "pav",
+          "pabpv",
+          "bpv",
+          "ctrv"
+        ]
+      },
+      {
+        "table": 6,
+        "scenarios": 18,
+        "paths": 7200,
+        "estimators": [
+          "rv5m",
+          "rk"
+        ],
+        "pairings": [
+          "rk"
+        ]
+      }
+    ]
+  },
+  "mc_smoke": {
+    "empirical_data_used": false,
+    "n_completed": 12,
+    "n_requested": 12,
+    "n_valid_all_metrics": 8,
+    "new_paths": 0,
+    "paper_results_reproduced": false,
+    "profile": "smoke",
+    "run_fingerprint": "444cb60bf3e6b703a2733eddcbdf1d75a090b789cd52ed0af5b8bd9074c9f4f0",
+    "scenarios": [
+      {
+        "failure_reasons": {},
+        "n_completed": 2,
+        "n_requested": 2,
+        "n_valid_all_metrics": 2,
+        "pairings": {},
+        "path_status_counts": {
+          "completed": 2
+        },
+        "scenario_id": "t3_h0.20_k0.010_noise1e-04"
+      },
+      {
+        "failure_reasons": {},
+        "n_completed": 2,
+        "n_requested": 2,
+        "n_valid_all_metrics": 2,
+        "pairings": {},
+        "path_status_counts": {
+          "completed": 2
+        },
+        "scenario_id": "t4_h0.20_k0.010_noise1e-04"
+      },
+      {
+        "failure_reasons": {},
+        "n_completed": 2,
+        "n_requested": 2,
+        "n_valid_all_metrics": 2,
+        "pairings": {},
+        "path_status_counts": {
+          "completed": 2
+        },
+        "scenario_id": "t4_h0.20_k0.010_noise5e-04"
+      },
+      {
+        "failure_reasons": {
+          "one_or_more_invalid_metrics; inspect_per_metric_counts_and_corrections": 2
+        },
+        "n_completed": 2,
+        "n_requested": 2,
+        "n_valid_all_metrics": 0,
+        "pairings": {
+          "bpv": {
+            "convergence_status_counts": {
+              "converged; invalid_long_corrected_curve": 2
+            },
+            "n_attempted": 2,
+            "n_boundary": 2,
+            "n_converged": 2,
+            "n_requested": 2,
+            "n_valid_long": 0,
+            "n_valid_short": 2
+          },
+          "ctrv": {
+            "convergence_status_counts": {
+              "converged; invalid_long_corrected_curve": 2
+            },
+            "n_attempted": 2,
+            "n_boundary": 2,
+            "n_converged": 2,
+            "n_requested": 2,
+            "n_valid_long": 0,
+            "n_valid_short": 2
+          },
+          "pabpv": {
+            "convergence_status_counts": {
+              "converged; invalid_long_corrected_curve": 2
+            },
+            "n_attempted": 2,
+            "n_boundary": 2,
+            "n_converged": 2,
+            "n_requested": 2,
+            "n_valid_long": 0,
+            "n_valid_short": 2
+          },
+          "pav": {
+            "convergence_status_counts": {
+              "converged; invalid_long_corrected_curve": 2
+            },
+            "n_attempted": 2,
+            "n_boundary": 2,
+            "n_converged": 2,
+            "n_requested": 2,
+            "n_valid_long": 0,
+            "n_valid_short": 2
+          },
+          "rk": {
+            "convergence_status_counts": {
+              "converged; invalid_long_corrected_curve": 2
+            },
+            "n_attempted": 2,
+            "n_boundary": 2,
+            "n_converged": 2,
+            "n_requested": 2,
+            "n_valid_long": 0,
+            "n_valid_short": 2
+          },
+          "tsrv": {
+            "convergence_status_counts": {
+              "converged; invalid_long_corrected_curve": 2
+            },
+            "n_attempted": 2,
+            "n_boundary": 2,
+            "n_converged": 2,
+            "n_requested": 2,
+            "n_valid_long": 0,
+            "n_valid_short": 2
+          }
+        },
+        "path_status_counts": {
+          "completed": 2
+        },
+        "scenario_id": "t5_h0.20_k0.010_noise1e-04"
+      },
+      {
+        "failure_reasons": {
+          "one_or_more_invalid_metrics; inspect_per_metric_counts_and_corrections": 2
+        },
+        "n_completed": 2,
+        "n_requested": 2,
+        "n_valid_all_metrics": 0,
+        "pairings": {
+          "rk": {
+            "convergence_status_counts": {
+              "converged; invalid_primary_corrected_curve": 2
+            },
+            "n_attempted": 2,
+            "n_boundary": 2,
+            "n_converged": 2,
+            "n_requested": 2,
+            "n_valid_long": 0,
+            "n_valid_short": 0
+          }
+        },
+        "path_status_counts": {
+          "completed": 2
+        },
+        "scenario_id": "t6_h0.10_k0.000_noise1e-04"
+      },
+      {
+        "failure_reasons": {},
+        "n_completed": 2,
+        "n_requested": 2,
+        "n_valid_all_metrics": 2,
+        "pairings": {
+          "rk": {
+            "convergence_status_counts": {
+              "converged": 2
+            },
+            "n_attempted": 2,
+            "n_boundary": 0,
+            "n_converged": 2,
+            "n_requested": 2,
+            "n_valid_long": 2,
+            "n_valid_short": 2
+          }
+        },
+        "path_status_counts": {
+          "completed": 2
+        },
+        "scenario_id": "t6_h0.50_k0.035_noise1e-04"
+      }
+    ]
+  },
+  "table2": {
+    "cells": 48,
+    "match_published_four_decimal_rounding": 34,
+    "max_absolute_difference": 0.004942396639087507,
+    "independent_integral_checks": [
+      {
+        "kappa": 0.003,
+        "max_m2_relative_difference": 1.0651479698253752e-12,
+        "H_hat_100_independent": 0.19459670789202063
+      },
+      {
+        "kappa": 0.01,
+        "max_m2_relative_difference": 1.0895728763671286e-12,
+        "H_hat_100_independent": 0.1744680767436223
+      },
+      {
+        "kappa": 0.02,
+        "max_m2_relative_difference": 1.134869975771835e-12,
+        "H_hat_100_independent": 0.14579893181015946
+      },
+      {
+        "kappa": 0.035,
+        "max_m2_relative_difference": 1.2103651414463457e-12,
+        "H_hat_100_independent": 0.11174239663909019
+      }
+    ],
+    "interpretation": "A printed-table discrepancy is not automatically a code defect. Compare independent integrals before changing the implementation."
+  },
+  "file_smoke": {
+    "data_kind": "synthetic_fixture",
+    "counts": {
+      "equities": {
+        "difference": -3925,
+        "forced_target": false,
+        "observed": 1,
+        "publication_reference": 3926
+      },
+      "futures_roots": {
+        "difference": -33,
+        "forced_target": false,
+        "observed": 1,
+        "publication_reference": 34
+      },
+      "matched_assets": {
+        "difference": -40,
+        "forced_target": false,
+        "observed": 1,
+        "publication_reference": 41
+      },
+      "option_underlyings": {
+        "difference": -43,
+        "forced_target": false,
+        "observed": 1,
+        "publication_reference": 44
+      },
+      "quality_equities": {
+        "difference": -1409,
+        "forced_target": false,
+        "observed": 0,
+        "publication_reference": 1409
+      },
+      "second_frequency_assets": {
+        "difference": -39,
+        "forced_target": false,
+        "observed": 1,
+        "publication_reference": 40
+      }
+    },
+    "comparison_counts": {
+      "corrected": 1,
+      "raw": 1
+    },
+    "full_empirical_replication": false,
+    "figures": {
+      "figure1_00": "rendered_from_supplied_fixture_or_data",
+      "figure1_01": "rendered_from_supplied_fixture_or_data",
+      "figure3": "rendered_from_supplied_fixture_or_data",
+      "figure4_00": "rendered_from_supplied_fixture_or_data",
+      "figure5": "rendered_from_supplied_fixture_or_data",
+      "figure6": "rendered_from_supplied_fixture_or_data",
+      "figure7": "rendered_from_supplied_fixture_or_data"
+    },
+    "figure2": {
+      "H": 0.5,
+      "data_kind": "synthetic_fixture",
+      "figure_sha256": "aea0a0e10f98910ececa9ba23761f92f7b02974a38299330b803dcf03d07dff8",
+      "kappas": [
+        0,
+        0.01,
+        0.035
+      ],
+      "moment_output_sha256": "abda9b930f1f63212e395721c1981015fdc1da49dc5dce03dacb14a4d4505aa0",
+      "n_completed": 3,
+      "n_days": 96,
+      "n_paths_each": 1,
+      "scenarios": [
+        {
+          "scenario_id": "t3_h0.50_k0.000_noise1e-04",
+          "seeds": {
+            "intraday": 6391519992100490000,
+            "latent": 168379870061800480
+          }
+        },
+        {
+          "scenario_id": "t3_h0.50_k0.010_noise1e-04",
+          "seeds": {
+            "intraday": 9267676599640297000,
+            "latent": 6910554256855107000
+          }
+        },
+        {
+          "scenario_id": "t3_h0.50_k0.035_noise1e-04",
+          "seeds": {
+            "intraday": 649905971700330800,
+            "latent": 12759242904618277000
+          }
+        }
+      ],
+      "statistical_replication": false
+    }
+  },
+  "review": {
+    "standards": {
+      "hard_violations": 0,
+      "nonblocking_smells": 1,
+      "smell": "Repeated corrected-moment diagnostics; retained to avoid unrelated cleanup"
+    },
+    "spec": {
+      "original_findings": 1,
+      "resolved_findings": 1,
+      "remaining_findings": 0
+    }
+  },
+  "detailed_receipts_directory": ".local/validation_20260924",
+  "detailed_receipt_hashes": {
+    "pytest.xml": "e42769b2f71e6369ec8d5389845bb5a818380e726415a423cd89693a17685ca4",
+    "mc/run_status.json": "f9b5173271b8257f8ad16c4f386e2a362d6715e80204f24e35f28db54f2f384e",
+    "mc/mc_summary.csv": "918858b95039ca7dc2fa5aea225a11122dd97b13839246882a2792917e1d7821",
+    "file_smoke/empirical/empirical_run.json": "af345d74efdc8d8f0db30b182c20265ed74ec9ebe9a93bc0a3a9b612d3d5d3e6",
+    "file_smoke/figures/figure_status.json": "7f8c996bf384f612963946e5dfc51a098d98e6ff2f71fcf71c2734892ee8387b",
+    "table2/table2_summary.json": "2d023db74ec841bf72ad206cdc301b9d00fd1f0d1a698411588da0da96179f4c",
+    "table2/table2_independent_check.csv": "531a90c5292000d804af73ea1993ff93269f1260e437b03da65df4ef9e16a012"
+  },
+  "boundaries": {
+    "push": false,
+    "pull_request": false,
+    "database_access": false,
+    "market_downloads": false,
+    "paper_scale_mc": false,
+    "forecast_experiments": false,
+    "dependency_installs": false,
+    "full_empirical_replication_claimed": false
+  }
+}
