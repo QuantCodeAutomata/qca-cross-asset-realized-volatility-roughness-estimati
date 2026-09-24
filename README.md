@@ -5,6 +5,10 @@ Saad Mouti's *Rough Volatility Across Assets* (2026). It is not the paper's
 empirical Nasdaq/CME/OPRA replication: the market-data panels used in the paper
 are not included here.
 
+Latest evidence: [available-sample validation, September 25, 2026](docs/AVAILABLE_SAMPLE_VALIDATION_2026-09-25.md)
+covers 104 observed securities, with aggregate-only outputs. The status is
+`available_sample_validated`; `fully_reproduced: false` remains explicit.
+
 The distinction matters:
 
 - **Experiment 2** directly reproduces the paper's exact fOU mean-reversion
@@ -186,9 +190,10 @@ A full empirical replication still requires, among other things:
   handling;
 - asset-level diagnostics, robustness windows, and uncertainty estimates.
 
-Until those panels are supplied and run through the audited functions, the
-correct label is **audited validation harness with a single-instrument
-real-data pilot**, not **full empirical replication**.
+Until those panels are supplied and run through the audited functions, this
+remains an **audited validation harness with scoped real-data evidence**, not
+**full empirical replication**. The dated reports distinguish the historical
+SPY pilot from the newer available-sample stock validation.
 
 ## Additive replication extension — September 24, 2026
 
