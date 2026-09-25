@@ -1,0 +1,1540 @@
+{
+  "AAL": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "AAPL": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "ABNB": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "ADBE": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "ADI": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "ADP": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "ADSK": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "AEP": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "ALGN": {
+    "last_observed": "2024-01-31",
+    "later_comparison_eligible": false,
+    "latest_eligible": false,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "insufficient_or_invalid_fit"
+    },
+    "new_security": true,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "AMAT": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "AMD": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "AMGN": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "AMZN": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "APP": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "ARM": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": [
+      {
+        "model": "rough_split_raw",
+        "reason": "insufficient_parameter_history"
+      },
+      {
+        "model": "rough_split_calibrated",
+        "reason": "insufficient_parameter_history"
+      },
+      {
+        "model": "rough_selected_calibrated",
+        "reason": "insufficient_parameter_history"
+      },
+      {
+        "horizon": 1,
+        "model": "har_split_calibrated",
+        "reason": "insufficient_training_rows"
+      },
+      {
+        "horizon": 5,
+        "model": "har_split_calibrated",
+        "reason": "insufficient_training_rows"
+      },
+      {
+        "horizon": 22,
+        "model": "har_split_calibrated",
+        "reason": "insufficient_training_rows"
+      }
+    ]
+  },
+  "ASML": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "AVGO": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "AZN": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "BIIB": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "BKNG": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": [
+      {
+        "horizon": 22,
+        "model": "rough_split_calibrated",
+        "n": 78,
+        "reason": "fewer_than_80_calibration_scores"
+      },
+      {
+        "horizon": 22,
+        "model": "rough_selected_calibrated",
+        "n": 78,
+        "reason": "fewer_than_80_calibration_scores"
+      },
+      {
+        "horizon": 1,
+        "model": "har_split_calibrated",
+        "n": 32,
+        "reason": "fewer_than_80_calibration_scores"
+      },
+      {
+        "horizon": 5,
+        "model": "har_split_calibrated",
+        "n": 26,
+        "reason": "fewer_than_80_calibration_scores"
+      },
+      {
+        "horizon": 22,
+        "model": "har_split_calibrated",
+        "n": 10,
+        "reason": "fewer_than_80_calibration_scores"
+      }
+    ]
+  },
+  "BKR": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "CDNS": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "CDW": {
+    "last_observed": null,
+    "later_comparison_eligible": false,
+    "latest_eligible": false,
+    "latest_fit_status": {},
+    "new_security": true,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "CEG": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "CHTR": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "CMCSA": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "COST": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "CPRT": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "CRWD": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "CSCO": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "CSX": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "CTAS": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "CTSH": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "DASH": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "DDOG": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "DLTR": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "DXCM": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "EA": {
+    "last_observed": "2026-08-04",
+    "later_comparison_eligible": false,
+    "latest_eligible": false,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "EBAY": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "EXC": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "EXPE": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "FANG": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "FAST": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "FISV": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": false,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": true,
+    "retrospective_omissions": []
+  },
+  "FTNT": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "GEHC": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": false,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": true,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "GILD": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "GOOG": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "GOOGL": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "HON": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "IDXX": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "ILMN": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "INTC": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "INTU": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "ISRG": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "KDP": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "KHC": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "KLAC": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "LIN": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": [
+      {
+        "model": "rough_selected_calibrated",
+        "reason": "insufficient_parameter_history"
+      }
+    ]
+  },
+  "LRCX": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": false,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": true,
+    "retrospective_omissions": []
+  },
+  "LULU": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "MAR": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "MCHP": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "MDB": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "MDLZ": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "MELI": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "META": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "MNST": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "MRNA": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "MRVL": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "MSFT": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "MU": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "NFLX": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "NVDA": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "NXPI": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "ODFL": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "ON": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "ORLY": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "PANW": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "PAYX": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "PCAR": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "PDD": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "PEP": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "PYPL": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "QCOM": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "REGN": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "ROP": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "ROST": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "SBUX": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "SNPS": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "SPY": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "SWKS": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "TEAM": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "TMUS": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "TSLA": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "TTD": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "TTWO": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "TXN": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "ULTA": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "VRSK": {
+    "last_observed": null,
+    "later_comparison_eligible": false,
+    "latest_eligible": false,
+    "latest_fit_status": {},
+    "new_security": true,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "VRTX": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "WBD": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "WDAY": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "WDC": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "XEL": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": false,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": true,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  },
+  "ZS": {
+    "last_observed": "2026-09-23",
+    "later_comparison_eligible": true,
+    "latest_eligible": true,
+    "latest_fit_status": {
+      "full_refit_gaussian": "ok",
+      "previous_cutoff_recomputed": null,
+      "split202603_calibrated": "ok",
+      "trailing504_gaussian": "ok"
+    },
+    "new_security": false,
+    "repaired_history": false,
+    "retrospective_omissions": []
+  }
+}

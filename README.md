@@ -9,6 +9,13 @@ Latest evidence: [available-sample validation, September 25, 2026](docs/AVAILABL
 covers 104 observed securities, with aggregate-only outputs. The status is
 `available_sample_validated`; `fully_reproduced: false` remains explicit.
 
+The [H/nu forecasting continuation](docs/FORECAST_RESULTS_2026-09-25.md) adds a
+retrospective OOS repeat, a 17-session frozen-parameter evaluation and a
+single-origin forecast snapshot for 102 securities. It improves on persistence
+without establishing superiority to HAR; interval calibration is not uniformly
+beneficial. Only aggregates and forecast snapshots are included, not observed
+time series. See the [fixed protocol](docs/FORECAST_PROTOCOL_2026-09-25.md).
+
 The distinction matters:
 
 - **Experiment 2** directly reproduces the paper's exact fOU mean-reversion
